@@ -1,0 +1,432 @@
+---
+/**
+ * cv.astro — Curriculum Vitae page.
+ *
+ * Pulls structured data from src/data/cv.yaml. Renders clean semantic HTML
+ * with print optimization for browser "Print to PDF" output.
+ *
+ * Features:
+ *   - All CV sections rendered from YAML data
+ *   - Publications count + link to /publications/
+ *   - Print button calling window.print()
+ *   - JSON-LD Person schema with professional details
+ *   - CV-specific print styles via .cv-layout class
+ */
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { siteMetadata } from "@data/meta";
+import { parseBibliography } from "@utils/bibtex";
+import yaml from "js-yaml";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+/** Parse CV YAML at build time */
+interface CVSkill {
+  category: string;
+  items: string[];
+}
+
+interface CVEducation {
+  degree: string;
+  institution: string;
+  location?: string;
+  dates: string;
+  gpa?: string;
+  honors?: string[];
+}
+
+interface CVExperience {
+  title: string;
+  organization: string;
+  parent?: string;
+  location?: string;
+  dates: string;
+  current?: boolean;
+  highlights?: string[];
+}
+
+interface CVResearch {
+  title: string;
+  institution: string;
+  dates: string;
+  description: string;
+}
+
+interface CVTeaching {
+  role: string;
+  course: string;
+  institution: string;
+  dates: string;
+}
+
+interface CVData {
+  name: string;
+  title: string;
+  affiliation: string;
+  email: string;
+  website: string;
+  orcid: string;
+  research_interests: string[];
+  education: CVEducation[];
+  experience: CVExperience[];
+  skills: CVSkill[];
+  research: CVResearch[];
+  teaching: CVTeaching[];
+  awards: Array<{ title: string; institution?: string; dates?: string }>;
+  service: Array<{ role: string; organization: string; dates?: string }>;
+  talks: Array<{ title: string; venue?: string; dates?: string }>;
+}
+
+const cvPath = resolve("src/data/cv.yaml");
+const cvRaw = readFileSync(cvPath, "utf-8");
+const cv = yaml.load(cvRaw) as CVData;
+
+/** Count publications from bibliography.bib */
+const pubs = await parseBibliography();
+const pubCount = pubs.length;
+
+/** JSON-LD Person schema for CV page */
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": `${siteMetadata.siteUrl}/#person`,
+  name: cv.name,
+  givenName: siteMetadata.name.split(" ")[0] ?? "",
+  familyName: siteMetadata.name.split(" ").slice(1).join(" "),
+  url: siteMetadata.siteUrl,
+  email: `mailto:${cv.email}`,
+  jobTitle: cv.title,
+  hasOccupation: {
+    "@type": "Occupation",
+    name: cv.title,
+    occupationalCategory: "Research Engineer",
+  },
+  worksFor: {
+    "@type": "Organization",
+    name: cv.experience?.[0]?.organization ?? siteMetadata.affiliations[0]?.name ?? "Your Institution",
+    parentOrganization: cv.experience?.[0]?.parent ? {
+      "@type": "Organization",
+      name: cv.experience[0].parent,
+    } : undefined,
+  },
+  alumniOf: cv.education.map((edu) => ({
+    "@type": "CollegeOrUniversity",
+    name: edu.institution,
+  })),
+  knowsAbout: siteMetadata.knowsAbout,
+  sameAs: [
+    siteMetadata.contact.linkedin,
+    siteMetadata.contact.github,
+    siteMetadata.contact.googleScholar,
+    `https://orcid.org/${cv.orcid}`,
+  ].filter(Boolean),
+};
+---
+
+<BaseLayout title="Curriculum Vitae" activeNav="cv">
+  {/* JSON-LD Person schema */}
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(personJsonLd)}
+  />
+
+  <div class="cv-layout wide-container py-12">
+    {/* ── Header ───────────────────────────────────────────────────────── */}
+    <header class="mb-8 border-b border-[var(--color-border)] pb-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 class="text-3xl font-semibold tracking-tight text-[var(--color-text)] md:text-4xl">
+            {cv.name}
+          </h1>
+          <p class="mt-1 text-base text-[var(--color-text-secondary)]">
+            {cv.title} · {cv.affiliation}
+          </p>
+          <p class="mt-1 font-mono text-xs text-[var(--color-muted)]">
+            <a href={`mailto:${cv.email}`} class="hover:text-[var(--color-accent)]">{cv.email}</a>
+            <span class="mx-1.5">·</span>
+            <a href={cv.website} class="hover:text-[var(--color-accent)]">{cv.website.replace("https://", "")}</a>
+            <span class="mx-1.5">·</span>
+            <a href={`https://orcid.org/${cv.orcid}`} class="hover:text-[var(--color-accent)]">ORCID: {cv.orcid}</a>
+          </p>
+        </div>
+
+        {/* Print / Download button */}
+        <div data-print-hidden>
+          <button
+            type="button"
+            onclick="window.print()"
+            class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent-border)] hover:text-[var(--color-accent)]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Save as PDF
+          </button>
+          <noscript>
+            <p class="mt-2 text-xs text-[var(--color-muted)]">
+              Use your browser's Print function (Ctrl+P / Cmd+P) to save as PDF.
+            </p>
+          </noscript>
+        </div>
+      </div>
+    </header>
+
+    {/* ── Research Interests ────────────────────────────────────────────── */}
+    <section class="cv-section mb-8">
+      <h2 class="cv-heading">Research Interests</h2>
+      <p class="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+        {cv.research_interests.join(" · ")}
+      </p>
+    </section>
+
+    {/* ── Education ─────────────────────────────────────────────────────── */}
+    <section class="cv-section mb-8">
+      <h2 class="cv-heading">Education</h2>
+      {cv.education.map((edu) => (
+        <div class="cv-entry">
+          <div class="cv-entry-header">
+            <div>
+              <span class="cv-entry-title">{edu.degree}</span>
+              <span class="cv-entry-org">{edu.institution}</span>
+              {edu.location && (
+                <span class="cv-entry-detail">{edu.location}</span>
+              )}
+            </div>
+            <span class="cv-entry-dates">{edu.dates}</span>
+          </div>
+          {edu.gpa && (
+            <p class="cv-entry-detail">GPA: {edu.gpa}</p>
+          )}
+          {edu.honors && edu.honors.length > 0 && (
+            <p class="cv-entry-detail">{edu.honors.join(", ")}</p>
+          )}
+        </div>
+      ))}
+    </section>
+
+    {/* ── Experience ────────────────────────────────────────────────────── */}
+    <section class="cv-section mb-8">
+      <h2 class="cv-heading">Experience</h2>
+      {cv.experience.map((exp) => (
+        <div class="cv-entry">
+          <div class="cv-entry-header">
+            <div>
+              <span class="cv-entry-title">{exp.title}</span>
+              <span class="cv-entry-org">
+                {exp.organization}
+                {exp.parent && `, ${exp.parent}`}
+              </span>
+              {exp.location && (
+                <span class="cv-entry-detail">{exp.location}</span>
+              )}
+            </div>
+            <span class="cv-entry-dates">{exp.dates}</span>
+          </div>
+          {exp.highlights && exp.highlights.length > 0 && (
+            <ul class="cv-highlights">
+              {exp.highlights.map((h) => (
+                <li>{h}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </section>
+
+    {/* ── Research Experience ───────────────────────────────────────────── */}
+    {cv.research && cv.research.length > 0 && (
+      <section class="cv-section mb-8">
+        <h2 class="cv-heading">Research Experience</h2>
+        {cv.research.map((r) => (
+          <div class="cv-entry">
+            <div class="cv-entry-header">
+              <div>
+                <span class="cv-entry-title">{r.title}</span>
+                <span class="cv-entry-org">{r.institution}</span>
+              </div>
+              <span class="cv-entry-dates">{r.dates}</span>
+            </div>
+            <p class="cv-entry-detail">{r.description}</p>
+          </div>
+        ))}
+      </section>
+    )}
+
+    {/* ── Publications ─────────────────────────────────────────────────── */}
+    <section class="cv-section mb-8">
+      <h2 class="cv-heading">Publications</h2>
+      <p class="text-sm text-[var(--color-text-secondary)]">
+        {pubCount} publication{pubCount !== 1 ? "s" : ""}.
+        <a
+          href="/publications/"
+          class="text-[var(--color-link)] underline hover:text-[var(--color-link-hover)]"
+        >
+          View all →
+        </a>
+      </p>
+    </section>
+
+    {/* ── Teaching ─────────────────────────────────────────────────────── */}
+    {cv.teaching && cv.teaching.length > 0 && (
+      <section class="cv-section mb-8">
+        <h2 class="cv-heading">Teaching</h2>
+        {cv.teaching.map((t) => (
+          <div class="cv-entry">
+            <div class="cv-entry-header">
+              <div>
+                <span class="cv-entry-title">{t.role}</span>
+                <span class="cv-entry-org">{t.course}, {t.institution}</span>
+              </div>
+              <span class="cv-entry-dates">{t.dates}</span>
+            </div>
+          </div>
+        ))}
+      </section>
+    )}
+
+    {/* ── Skills ───────────────────────────────────────────────────────── */}
+    <section class="cv-section mb-8">
+      <h2 class="cv-heading">Technical Skills</h2>
+      {cv.skills.map((group) => (
+        <div class="cv-entry">
+          <p class="text-sm text-[var(--color-text-secondary)]">
+            <strong class="font-medium text-[var(--color-text)]">{group.category}:</strong>{" "}
+            {group.items.join(", ")}
+          </p>
+        </div>
+      ))}
+    </section>
+
+    {/* ── Awards ───────────────────────────────────────────────────────── */}
+    {cv.awards && cv.awards.length > 0 && (
+      <section class="cv-section mb-8">
+        <h2 class="cv-heading">Awards & Fellowships</h2>
+        {cv.awards.map((a) => (
+          <div class="cv-entry">
+            <div class="cv-entry-header">
+              <div>
+                <span class="cv-entry-title">{a.title}</span>
+                {a.institution && (
+                  <span class="cv-entry-org">{a.institution}</span>
+                )}
+              </div>
+              {a.dates && <span class="cv-entry-dates">{a.dates}</span>}
+            </div>
+          </div>
+        ))}
+      </section>
+    )}
+
+    {/* ── Service ──────────────────────────────────────────────────────── */}
+    {cv.service && cv.service.length > 0 && (
+      <section class="cv-section mb-8">
+        <h2 class="cv-heading">Professional Service</h2>
+        {cv.service.map((s) => (
+          <div class="cv-entry">
+            <div class="cv-entry-header">
+              <div>
+                <span class="cv-entry-title">{s.role}</span>
+                <span class="cv-entry-org">{s.organization}</span>
+              </div>
+              {s.dates && <span class="cv-entry-dates">{s.dates}</span>}
+            </div>
+          </div>
+        ))}
+      </section>
+    )}
+
+    {/* ── Talks ────────────────────────────────────────────────────────── */}
+    {cv.talks && cv.talks.length > 0 && (
+      <section class="cv-section mb-8">
+        <h2 class="cv-heading">Selected Talks</h2>
+        {cv.talks.map((t) => (
+          <div class="cv-entry">
+            <div class="cv-entry-header">
+              <div>
+                <span class="cv-entry-title">{t.title}</span>
+                {t.venue && <span class="cv-entry-org">{t.venue}</span>}
+              </div>
+              {t.dates && <span class="cv-entry-dates">{t.dates}</span>}
+            </div>
+          </div>
+        ))}
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  /* ── CV layout styles ───────────────────────────────────────────────────── */
+
+  .cv-heading {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-muted);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .cv-entry {
+    margin-bottom: 0.75rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .cv-entry-title {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.4;
+  }
+
+  .cv-entry-org {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+  }
+
+  .cv-entry-dates {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .cv-entry-detail {
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    line-height: 1.5;
+    margin-top: 0.125rem;
+  }
+
+  .cv-highlights {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin-top: 0.25rem;
+  }
+
+  .cv-highlights li {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.125rem;
+  }
+
+  .cv-highlights li::marker {
+    color: var(--color-muted);
+  }
+</style>

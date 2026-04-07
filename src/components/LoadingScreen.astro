@@ -1,0 +1,290 @@
+---
+/**
+ * LoadingScreen.astro — Page loading animation overlay.
+ *
+ * NOT a React island — this renders as inline HTML + CSS that is visible
+ * immediately on page load, before any JavaScript hydrates. A small inline
+ * script dismisses the overlay after the animation completes.
+ *
+ * Four animation styles (configured via settings.json → appearance.loadingAnimation):
+ *   - monogram: SVG initials with animated stroke drawing
+ *   - terminal: Fake terminal boot sequence with typing effect
+ *   - pulse: Pulsing ring with name
+ *   - name: Name reveal with slide-up animation
+ *
+ * The component reads siteMetadata for personalized content (name, initials, role).
+ */
+import { siteMetadata } from "@data/meta";
+
+interface Props {
+  style: "monogram" | "terminal" | "pulse" | "name";
+}
+
+const { style } = Astro.props;
+
+/** Derive initials from the site owner's name (e.g., "Jane Doe" → "JD") */
+const initials = siteMetadata.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join("")
+  .toUpperCase()
+  .slice(0, 2);
+
+const name = siteMetadata.name;
+const role = siteMetadata.role;
+const domain = siteMetadata.siteUrl.replace(/^https?:\/\//, "");
+
+/** Animation duration in ms — loader auto-dismisses after this */
+const DURATION = style === "terminal" ? 2200 : 1600;
+---
+
+<div class="loader-overlay" id="loader" aria-hidden="true" style="display:none;">
+  {/* ── Monogram: SVG initials with stroke animation ───────────────── */}
+  {style === "monogram" && (
+    <div class="loader-monogram">
+      <svg viewBox="0 0 100 100" width="90" height="90">
+        <text
+          x="50"
+          y="62"
+          text-anchor="middle"
+          font-family="var(--font-sans)"
+          font-size="42"
+          font-weight="700"
+          letter-spacing="-1"
+          fill="none"
+          stroke="var(--color-accent)"
+          stroke-width="1.5"
+          class="loader-monogram-text"
+        >
+          {initials}
+        </text>
+        <circle
+          cx="50"
+          cy="50"
+          r="44"
+          fill="none"
+          stroke="var(--color-accent)"
+          stroke-width="0.8"
+          class="loader-monogram-ring"
+          opacity="0.3"
+        />
+      </svg>
+    </div>
+  )}
+
+  {/* ── Terminal: Boot sequence with typing effect ──────────────────── */}
+  {style === "terminal" && (
+    <div class="loader-terminal">
+      <div class="loader-terminal-line" style="animation-delay: 0ms">
+        <span class="loader-terminal-prompt">&gt;</span> initializing {domain}
+      </div>
+      <div class="loader-terminal-line" style="animation-delay: 400ms">
+        <span class="loader-terminal-prompt">&gt;</span> loading modules...
+      </div>
+      <div class="loader-terminal-line" style="animation-delay: 900ms">
+        <span class="loader-terminal-prompt">&gt;</span> compiling assets... done.
+      </div>
+      <div class="loader-terminal-line" style="animation-delay: 1400ms">
+        <span class="loader-terminal-prompt">&gt;</span> ready.<span class="loader-terminal-cursor">_</span>
+      </div>
+    </div>
+  )}
+
+  {/* ── Pulse: Expanding ring with name ────────────────────────────── */}
+  {style === "pulse" && (
+    <div class="loader-pulse">
+      <div class="loader-pulse-ring" />
+      <div class="loader-pulse-ring loader-pulse-ring-2" />
+      <div class="loader-pulse-name">{name}</div>
+    </div>
+  )}
+
+  {/* ── Name: Large name reveal with role subtitle ─────────────────── */}
+  {style === "name" && (
+    <div class="loader-name-reveal">
+      <div class="loader-name-big">{name}</div>
+      <div class="loader-name-sub">{role}</div>
+    </div>
+  )}
+</div>
+
+{/* Inline script — shows loader on first visit only, dismisses after animation.
+ * The overlay renders with display:none to prevent View Transition blocking.
+ * This script makes it visible only on the very first page load. */}
+<script is:inline define:vars={{ DURATION }}>
+  (function() {
+    var loader = document.getElementById("loader");
+    if (!loader) return;
+    /* On View Transition navigations, do nothing — overlay stays display:none */
+    if (sessionStorage.getItem("_loaderShown")) return;
+    /* First page load — show overlay, play animation, then dismiss */
+    sessionStorage.setItem("_loaderShown", "1");
+    loader.style.display = "flex";
+    setTimeout(function() {
+      loader.style.opacity = "0";
+      setTimeout(function() { loader.remove(); }, 400);
+    }, DURATION);
+  })();
+</script>
+
+<style>
+  /* ── Shared overlay ─────────────────────────────────────────────────── */
+  .loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
+    transition: opacity 0.4s ease;
+  }
+
+  /* ── Monogram ───────────────────────────────────────────────────────── */
+  .loader-monogram {
+    animation: loader-fade-in 0.4s ease both;
+  }
+
+  .loader-monogram-text {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: loader-stroke-draw 1.2s ease forwards 0.2s;
+  }
+
+  .loader-monogram-ring {
+    stroke-dasharray: 280;
+    stroke-dashoffset: 280;
+    animation: loader-stroke-draw 1.4s ease forwards 0.1s;
+  }
+
+  @keyframes loader-stroke-draw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* ── Terminal ───────────────────────────────────────────────────────── */
+  .loader-terminal {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-accent);
+    max-width: 400px;
+    padding: 24px;
+  }
+
+  .loader-terminal-line {
+    opacity: 0;
+    animation: loader-type-in 0.3s ease forwards;
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+
+  .loader-terminal-prompt {
+    color: var(--color-muted);
+    margin-right: 6px;
+  }
+
+  .loader-terminal-cursor {
+    animation: loader-blink 0.6s step-end infinite;
+  }
+
+  @keyframes loader-type-in {
+    from { opacity: 0; transform: translateX(-4px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes loader-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── Pulse ──────────────────────────────────────────────────────────── */
+  .loader-pulse {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: loader-fade-in 0.3s ease both;
+  }
+
+  .loader-pulse-ring {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-accent);
+    opacity: 0;
+    animation: loader-pulse-expand 1.6s ease-out infinite;
+  }
+
+  .loader-pulse-ring-2 {
+    animation-delay: 0.5s;
+  }
+
+  .loader-pulse-name {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+    z-index: 1;
+  }
+
+  @keyframes loader-pulse-expand {
+    0% { transform: scale(0.5); opacity: 0.6; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ── Name reveal ────────────────────────────────────────────────────── */
+  .loader-name-reveal {
+    text-align: center;
+  }
+
+  .loader-name-big {
+    font-family: var(--font-sans);
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.03em;
+    opacity: 0;
+    animation: loader-slide-up 0.6s ease forwards 0.2s;
+  }
+
+  .loader-name-sub {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: loader-slide-up 0.5s ease forwards 0.5s;
+  }
+
+  @keyframes loader-slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes loader-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ── Reduced motion: skip animations, show briefly, then dismiss ──── */
+  @media (prefers-reduced-motion: reduce) {
+    .loader-overlay {
+      transition: none;
+    }
+    .loader-monogram-text,
+    .loader-monogram-ring,
+    .loader-terminal-line,
+    .loader-name-big,
+    .loader-name-sub {
+      animation: none;
+      opacity: 1;
+      stroke-dashoffset: 0;
+      transform: none;
+    }
+    .loader-pulse-ring {
+      animation: none;
+    }
+  }
+</style>

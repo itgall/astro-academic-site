@@ -1,0 +1,40 @@
+---
+/**
+ * notes/index.astro — Digital garden note listing.
+ *
+ * Shows all published notes using NoteCard components,
+ * sorted by date (most recent first). Includes a maturity legend.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import NoteCard from "@components/NoteCard.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Note = CollectionEntry<"notes">;
+
+const notes: Note[] = (await getCollection("notes", ({ data }: Note) => data.published))
+  .sort((a: Note, b: Note) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<PageLayout
+  title="Notes"
+  subtitle="A digital garden of ideas at various stages of development."
+  activeNav="notes"
+>
+  {/* Maturity legend */}
+  <div class="mb-8 flex flex-wrap items-center gap-4 text-xs text-[var(--color-muted)]">
+    <span class="font-mono text-[11px] tracking-wider uppercase">Maturity:</span>
+    <span>🌱 Seedling</span>
+    <span>🌿 Budding</span>
+    <span>🌳 Evergreen</span>
+  </div>
+
+  {notes.length === 0 ? (
+    <p class="text-sm text-[var(--color-muted)]">No notes published yet.</p>
+  ) : (
+    <div class="grid gap-2 sm:grid-cols-2">
+      {notes.map((note) => (
+        <NoteCard note={note} />
+      ))}
+    </div>
+  )}
+</PageLayout>

@@ -1,0 +1,185 @@
+---
+/**
+ * blog/index.astro — Blog listing page with client-side faceted filtering.
+ *
+ * Three filter dimensions: category and tag.
+ * All filtering is instant (client-side DOM toggling via data attributes).
+ * Posts are rendered server-side with data-category and data-tags
+ * attributes that the inline script reads to show/hide matches.
+ *
+ * Falls back gracefully without JS: all posts visible, tag chips link to
+ * static tag pages for search engine indexing.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import PostCard from "@components/PostCard.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Post = CollectionEntry<"posts">;
+
+const posts: Post[] = (await getCollection("posts", ({ data }: Post) => data.published))
+  .sort((a: Post, b: Post) => b.data.date.getTime() - a.data.date.getTime());
+
+/** Collect all unique tags across posts */
+const allTags = [...new Set(posts.flatMap((p: Post) => p.data.tags))].sort();
+
+/** Collect all unique categories */
+const allCategories = [...new Set(posts.map((p: Post) => p.data.category))].sort();
+
+const categoryLabels: Record<string, string> = {
+  technical: "Technical Note",
+  thesis: "Thesis",
+  essay: "Essay",
+  dispatch: "Dispatch",
+  "build-log": "Build Log",
+};
+
+/** Group posts by year for section headers */
+const postsByYear = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.date.getFullYear();
+  if (!postsByYear.has(year)) postsByYear.set(year, []);
+  postsByYear.get(year)!.push(post);
+}
+---
+
+<PageLayout
+  title="Blog"
+  subtitle={`Technical notes, theses, essays, and build logs. ${posts.length} post${posts.length === 1 ? "" : "s"}.`}
+  activeNav="blog"
+>
+  {/* Filter bar */}
+  <div id="blog-filters" class="mb-8 space-y-3">
+    {/* Category filter */}
+    {allCategories.length > 1 && (
+      <div class="flex flex-wrap gap-1.5">
+        <button class="filter-btn active" data-filter="category" data-value="all">All</button>
+        {allCategories.map((cat) => (
+          <button class="filter-btn" data-filter="category" data-value={cat}>
+            {categoryLabels[cat] ?? cat}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {/* Tag filter */}
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-1.5">
+        <button class="filter-btn active" data-filter="tag" data-value="all">All tags</button>
+        {allTags.map((tag) => (
+          <button class="filter-btn" data-filter="tag" data-value={tag}>{tag}</button>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* No results message (hidden by default) */}
+  <p id="blog-no-results" class="hidden text-sm text-[var(--color-muted)] py-8 text-center">
+    No posts match the selected filters.
+  </p>
+
+  {/* Post listing grouped by year */}
+  {posts.length === 0 ? (
+    <p class="text-sm text-[var(--color-muted)]">No posts published yet.</p>
+  ) : (
+    <div id="blog-posts" class="space-y-8">
+      {[...postsByYear.entries()].map(([year, yearPosts]) => (
+        <section data-year-group={year}>
+          <h2 class="mb-3 font-mono text-sm font-medium text-[var(--color-text)]">{year}</h2>
+          <div class="space-y-2">
+            {yearPosts.map((post) => (
+              <div
+                class="blog-item"
+                data-category={post.data.category}
+                data-year={post.data.date.getFullYear()}
+                data-tags={post.data.tags.join(",")}
+              >
+                <PostCard post={post} />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )}
+</PageLayout>
+
+<style>
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-accent-border);
+    color: var(--color-accent);
+  }
+
+  .filter-btn.active {
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-bg);
+    color: var(--color-accent);
+  }
+
+  .blog-item.filtered-out {
+    display: none;
+  }
+</style>
+
+<script is:inline>
+(function(){
+  var bar = document.getElementById('blog-filters');
+  var posts = document.getElementById('blog-posts');
+  var noResults = document.getElementById('blog-no-results');
+  if (!bar || !posts) return;
+
+  var filters = { category: 'all', tag: 'all' };
+
+  function applyFilters() {
+    var items = posts.querySelectorAll('.blog-item');
+    var visible = 0;
+
+    items.forEach(function(item) {
+      var catMatch = filters.category === 'all' || item.dataset.category === filters.category;
+      var tagMatch = filters.tag === 'all' || (item.dataset.tags || '').split(',').indexOf(filters.tag) !== -1;
+      var show = catMatch && tagMatch;
+      item.classList.toggle('filtered-out', !show);
+      if (show) visible++;
+    });
+
+    posts.querySelectorAll('[data-year-group]').forEach(function(section) {
+      var hasVisible = section.querySelector('.blog-item:not(.filtered-out)');
+      section.style.display = hasVisible ? '' : 'none';
+    });
+
+    if (noResults) {
+      noResults.classList.toggle('hidden', visible > 0);
+    }
+  }
+
+  bar.addEventListener('click', function(e) {
+    var btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+
+    var type = btn.dataset.filter;
+    var val = btn.dataset.value;
+    filters[type] = val;
+
+    var row = btn.parentElement;
+    row.querySelectorAll('.filter-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.value === val);
+    });
+
+    applyFilters();
+  });
+})();
+</script>

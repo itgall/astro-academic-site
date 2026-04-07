@@ -1,0 +1,219 @@
+---
+/**
+ * index.astro — Homepage.
+ *
+ * Sections:
+ *   1. Hero: name, role/affiliation, one-paragraph bio, profile photo,
+ *      quick nav links, status indicator
+ *   2. About preview: brief research interests with link to full about page
+ *   3. Recent Publications: 5 most recent from BibTeX (wired in Session 3)
+ *   4. Current Research: project highlights placeholder (wired in Session 4)
+ *   5. Recent Posts: placeholder (wired in Session 4)
+ *
+ * JSON-LD: Person schema via Head.astro (pageType="home").
+ * LCP: profile photo loaded eager with explicit dimensions.
+ */
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PubCard from "@components/PubCard.astro";
+import PostCard from "@components/PostCard.astro";
+import ProjectCard from "@components/ProjectCard.astro";
+import { siteMetadata } from "@data/meta";
+import { parseBibliography } from "@utils/bibtex";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Post = CollectionEntry<"posts">;
+type Project = CollectionEntry<"projects">;
+
+/** Fetch the 5 most recent publications for the homepage section */
+const allPubs = await parseBibliography();
+const recentPubs = allPubs.slice(0, 5);
+
+/** Fetch the 3 most recent published blog posts */
+const recentPosts: Post[] = (await getCollection("posts", ({ data }: Post) => data.published))
+  .sort((a: Post, b: Post) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
+
+/** Fetch published projects for "Current Research" section */
+const projects: Project[] = (await getCollection("projects", ({ data }: Project) => data.published))
+  .sort((a: Project, b: Project) => a.data.number.localeCompare(b.data.number));
+---
+
+<BaseLayout activeNav="home" pageType="home">
+  <div class="wide-container">
+
+    {/* ─── Hero Section ──────────────────────────────────────────────── */}
+    <section class="py-20 md:py-24 border-b border-[var(--color-border)]">
+      <div class="grid gap-10 md:grid-cols-[1fr_auto] md:items-start md:gap-16">
+        <div>
+          {/* Status indicator — pulse dot with current role */}
+          <div class="mb-6 flex items-center gap-2.5">
+            <span
+              class="inline-block h-2 w-2 rounded-full bg-[var(--color-success)]"
+              style="animation: pulse-dot 2.5s ease-in-out infinite;"
+              aria-hidden="true"
+            ></span>
+            <span class="font-mono text-[11px] tracking-wider text-[var(--color-muted)]">
+              Research Engineer · Boston, MA
+            </span>
+          </div>
+
+          {/* Name */}
+          <h1 class="vt-page-title text-4xl font-semibold tracking-tight text-[var(--color-text)] md:text-5xl leading-[1.1]">
+            {siteMetadata.name}
+          </h1>
+
+          {/* Affiliation */}
+          <p class="mt-3 font-mono text-sm text-[var(--color-muted)] tracking-wide leading-relaxed">
+            {siteMetadata.role}
+            <span class="mx-1.5 text-[var(--color-border)]">·</span>
+            {siteMetadata.subtitle}
+          </p>
+
+          {/* Bio — left accent border matching old site design */}
+          <div class="mt-7 max-w-xl border-l-2 border-[var(--color-accent)] pl-5">
+            <p class="text-[15px] text-[var(--color-text-secondary)] leading-[1.78]">
+              Building at the intersection of [field 1], [field 2], and [field 3].
+              Replace this bio with a concise description of your research focus
+              and institutional affiliation.
+            </p>
+          </div>
+
+          {/* Quick nav links */}
+          <div class="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href="/publications/"
+              class="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)] hover:text-[#0e1117] no-underline"
+            >
+              Publications
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </a>
+            <a href="/projects/" class="text-sm font-medium text-[var(--color-link)] hover:text-[var(--color-link-hover)] transition-colors no-underline">
+              Projects
+            </a>
+            <span class="text-[var(--color-border)]">·</span>
+            <a href="/cv/" class="text-sm font-medium text-[var(--color-link)] hover:text-[var(--color-link-hover)] transition-colors no-underline">
+              CV
+            </a>
+            <span class="text-[var(--color-border)]">·</span>
+            <a href="/contact/" class="text-sm font-medium text-[var(--color-link)] hover:text-[var(--color-link-hover)] transition-colors no-underline">
+              Contact
+            </a>
+          </div>
+        </div>
+
+        {/* Profile photo — placeholder until image is migrated */}
+        <div class="hidden md:block">
+          <div
+            class="h-44 w-44 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] flex items-center justify-center overflow-hidden"
+            aria-label="Profile photo"
+          >
+            {/*
+             * Profile image placeholder. Replace with Astro <Image /> component:
+             * <Image src={import("../assets/profile.jpg")} alt="Your Name"
+             *   width={176} height={176} loading="eager" />
+             */}
+            <span class="font-mono text-3xl font-semibold text-[var(--color-muted)] opacity-30">??</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ─── About Preview ─────────────────────────────────────────────── */}
+    <section class="py-14 border-b border-[var(--color-border)]">
+      <div class="flex items-baseline justify-between mb-6">
+        <span class="terminal-label">
+          &gt;_ About
+        </span>
+        <a href="/about/" class="font-mono text-[11px] text-[var(--color-muted)] hover:text-[var(--color-link)] transition-colors no-underline">
+          Read more →
+        </a>
+      </div>
+      <div class="max-w-xl">
+        <p class="text-[15px] text-[var(--color-text-secondary)] leading-[1.78] mb-4">
+          My research focuses on developing next-generation optical imaging and sensing technologies.
+          I work on inverse algorithms for spectroscopic tissue characterization, computational modeling
+          of light-tissue interaction, and emerging photoacoustic methods in the near-infrared II window.
+        </p>
+        <div class="flex flex-wrap gap-2 mt-5">
+          {siteMetadata.knowsAbout.slice(0, 6).map((topic) => (
+            <span class="inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 font-mono text-[10px] tracking-wider text-[var(--color-muted)]">
+              {topic}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ─── Recent Publications ───────────────────────────────────────── */}
+    <section class="py-14 border-b border-[var(--color-border)]">
+      <div class="flex items-baseline justify-between mb-6">
+        <span class="terminal-label">
+          &gt;_ Recent Publications
+        </span>
+        <a href="/publications/" class="font-mono text-[11px] text-[var(--color-muted)] hover:text-[var(--color-link)] transition-colors no-underline">
+          View all →
+        </a>
+      </div>
+      {recentPubs.length > 0 ? (
+        <div class="space-y-3">
+          {recentPubs.map((pub) => (
+            <PubCard pub={pub} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-sm text-[var(--color-muted)] italic">
+          No publications found. Add entries to src/data/bibliography.bib.
+        </p>
+      )}
+    </section>
+
+    {/* ─── Current Research ───────────────────────────────────────────── */}
+    <section class="py-14 border-b border-[var(--color-border)]">
+      <div class="flex items-baseline justify-between mb-6">
+        <span class="terminal-label">
+          &gt;_ Current Research
+        </span>
+        <a href="/projects/" class="font-mono text-[11px] text-[var(--color-muted)] hover:text-[var(--color-link)] transition-colors no-underline">
+          View all →
+        </a>
+      </div>
+      {projects.length > 0 ? (
+        <div class="space-y-2">
+          {projects.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-sm text-[var(--color-muted)] italic">
+          No projects published yet.
+        </p>
+      )}
+    </section>
+
+    {/* ─── Recent Writing ───────────────────────────────────────────────── */}
+    <section class="py-14">
+      <div class="flex items-baseline justify-between mb-6">
+        <span class="terminal-label">
+          &gt;_ Recent Writing
+        </span>
+        <a href="/blog/" class="font-mono text-[11px] text-[var(--color-muted)] hover:text-[var(--color-link)] transition-colors no-underline">
+          View all →
+        </a>
+      </div>
+      {recentPosts.length > 0 ? (
+        <div class="space-y-2">
+          {recentPosts.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-sm text-[var(--color-muted)] italic">
+          No blog posts published yet.
+        </p>
+      )}
+    </section>
+
+  </div>
+</BaseLayout>

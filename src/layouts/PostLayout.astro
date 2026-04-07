@@ -1,0 +1,112 @@
+---
+/**
+ * PostLayout.astro — Blog post / article layout.
+ *
+ * Features: reading time, date, category badge, tags, table of contents,
+ * and prose-width content area.
+ * TOC auto-generated from h2/h3 headings passed from the page route.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import TOC from "@components/TOC.astro";
+import Backlinks from "@components/Backlinks.astro";
+import SEO from "@components/SEO.astro";
+import { formatDate } from "@utils/dates";
+import { getBacklinksForUrl } from "@utils/backlinks";
+import { features } from "@data/settings";
+import type { CollectionEntry } from "astro:content";
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  post: CollectionEntry<"posts">;
+  /** Headings extracted from rendered content for TOC generation */
+  headings?: Heading[];
+}
+
+const { post, headings = [] } = Astro.props;
+const { title, date, category, description, readingTime, updatedDate } = post.data;
+const tags: string[] = post.data.tags;
+
+/** Compute backlinks for this post at build time (only if feature enabled) */
+const pageUrl = `/blog/${post.id}/`;
+const backlinks = features.backlinks ? await getBacklinksForUrl(pageUrl) : [];
+---
+
+<BaseLayout title={title} description={description} activeNav="blog">
+  {/* JSON-LD BlogPosting schema */}
+  <SEO
+    slot="head"
+    pageType="post"
+    title={title}
+    description={description}
+    url={pageUrl}
+    datePublished={date.toISOString()}
+    dateModified={updatedDate ? updatedDate.toISOString() : date.toISOString()}
+    tags={tags}
+    category={category}
+  />
+  <article class="prose-container py-12" data-pagefind-body>
+    <header class="mb-10">
+      <a
+        href="/blog/"
+        class="mb-4 inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors"
+        data-pagefind-ignore
+      >
+        ← Back to Blog
+      </a>
+      <h1 class="text-3xl font-semibold tracking-tight text-[var(--color-text)] md:text-4xl leading-tight" data-pagefind-meta="title">
+        {title}
+      </h1>
+      {/* Pagefind filter attributes for search faceting */}
+      <data hidden data-pagefind-filter={`year:${date.getFullYear()}`} />
+      <data hidden data-pagefind-filter={`type:${category}`} />
+      <div class="mt-4 flex flex-wrap items-center gap-3 font-mono text-xs text-[var(--color-muted)]">
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        {updatedDate && (
+          <>
+            <span class="text-[var(--color-border)]">·</span>
+            <span>Updated {formatDate(updatedDate)}</span>
+          </>
+        )}
+        <span class="text-[var(--color-border)]">·</span>
+        <span class="rounded-sm bg-[var(--color-accent-bg)] px-2 py-0.5 text-[var(--color-accent)]">
+          {category}
+        </span>
+        {readingTime && (
+          <>
+            <span class="text-[var(--color-border)]">·</span>
+            <span>{readingTime}</span>
+          </>
+        )}
+      </div>
+      {tags.length > 0 && (
+        <div class="mt-3 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <a
+              href={`/blog/tags/${tag}/`}
+              class="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 font-mono text-[10px] text-[var(--color-muted)] hover:border-[var(--color-accent-border)] hover:text-[var(--color-accent)] transition-colors"
+              data-pagefind-filter={`tag:${tag}`}
+            >
+              {tag}
+            </a>
+          ))}
+        </div>
+      )}
+    </header>
+
+    {/* Table of contents — controlled by features.tableOfContents setting */}
+    {features.tableOfContents && <TOC headings={headings} />}
+
+    <div class="prose max-w-none">
+      <slot />
+    </div>
+
+    {features.backlinks && backlinks.length > 0 && (
+      <Backlinks backlinks={backlinks.map((b) => ({ title: b.sourceTitle, url: b.sourceUrl, context: b.context }))} />
+    )}
+  </article>
+</BaseLayout>

@@ -1,0 +1,100 @@
+---
+/**
+ * teaching/[...slug].astro — Individual teaching/course page.
+ *
+ * Features:
+ *   - Course title, code, semester, institution, role
+ *   - Markdown content body
+ *   - JSON-LD Course schema for structured data
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "@layouts/BaseLayout.astro";
+
+type Course = CollectionEntry<"teaching">;
+
+export async function getStaticPaths() {
+  const courses: Course[] = await getCollection("teaching");
+  return courses.map((course: Course) => ({
+    params: { slug: course.id },
+    props: { course },
+  }));
+}
+
+const { course } = Astro.props as { course: Course };
+const { Content } = await render(course);
+
+const roleLabels: Record<string, string> = {
+  instructor: "Instructor",
+  ta: "Teaching Assistant",
+  "guest-lecturer": "Guest Lecturer",
+};
+
+/** JSON-LD Course schema per https://schema.org/Course */
+const courseJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Course",
+  name: course.data.title,
+  courseCode: course.data.courseCode ?? undefined,
+  description: course.data.description,
+  provider: {
+    "@type": "Organization",
+    name: course.data.institution,
+  },
+  hasCourseInstance: {
+    "@type": "CourseInstance",
+    courseMode: "onsite",
+    name: `${course.data.semester}`,
+  },
+};
+---
+
+<BaseLayout title={course.data.title} activeNav="teaching">
+  {/* JSON-LD Course schema injected into <head> */}
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(courseJsonLd)}
+  />
+
+  <article class="prose-container py-12" data-pagefind-body>
+    <header class="mb-8">
+      <a
+        href="/teaching/"
+        class="mb-4 inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors"
+        data-pagefind-ignore
+      >
+        ← Back to Teaching
+      </a>
+      <h1 class="text-2xl font-semibold tracking-tight text-[var(--color-text)] md:text-3xl leading-tight" data-pagefind-meta="title">
+        {course.data.title}
+      </h1>
+      {/* Pagefind filter for content type */}
+      <data hidden data-pagefind-filter="type:teaching" />
+      <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--color-muted)]">
+        {course.data.courseCode && (
+          <span class="rounded-sm bg-[var(--color-accent-bg)] px-2 py-0.5 font-mono text-[var(--color-accent)]">
+            {course.data.courseCode}
+          </span>
+        )}
+        <span>{course.data.semester}</span>
+        <span class="text-[var(--color-border)]">·</span>
+        <span>{course.data.institution}</span>
+        <span class="text-[var(--color-border)]">·</span>
+        <span>{roleLabels[course.data.role] ?? course.data.role}</span>
+      </div>
+      {course.data.tags.length > 0 && (
+        <div class="mt-3 flex flex-wrap gap-2">
+          {course.data.tags.map((tag: string) => (
+            <span class="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 font-mono text-[10px] text-[var(--color-muted)]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <div class="prose max-w-none">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,157 @@
+---
+/**
+ * publications/index.astro — Publications Listing Page.
+ *
+ * Lists all publications parsed from bibliography.bib, grouped by year
+ * with year headers as <h2> section dividers.
+ *
+ * Filter approach: CSS-only using radio buttons + :has() selector.
+ *   - Chosen over React island because: zero JS, works without hydration,
+ *     progressive enhancement (shows all if CSS :has() unsupported),
+ *     no layout shift from island hydration.
+ *   - Trade-off: URL doesn't update with filter state. Acceptable because
+ *     the listing page is short enough to scan visually.
+ *
+ * Pagefind attributes on each entry: data-pagefind-body, data-pagefind-filter
+ * for year, type, and keywords.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import PubList from "@components/PubList.astro";
+import { parseBibliography, pubTypeLabel } from "@utils/bibtex";
+import type { PubType } from "@utils/bibtex";
+
+const publications = await parseBibliography();
+
+/** Collect unique publication types for filter UI */
+const types = [...new Set(publications.map((p) => p.type))].sort() as PubType[];
+
+/** Total count for display */
+const count = publications.length;
+---
+
+<PageLayout
+  title="Publications"
+  subtitle={`${count} publications — research output, preprints, and presentations.`}
+  activeNav="publications"
+>
+  {/* ── Filter UI — CSS-only radio buttons ──────────────────────────── */}
+  <div class="pub-filter mb-8">
+    <fieldset class="flex flex-wrap gap-2 border-0 p-0">
+      <legend class="sr-only">Filter by publication type</legend>
+
+      {/* "All" option — checked by default */}
+      <input
+        type="radio"
+        name="pub-type"
+        id="filter-all"
+        value="all"
+        checked
+        class="sr-only peer/all"
+      />
+      <label
+        for="filter-all"
+        class="filter-chip"
+      >
+        All ({count})
+      </label>
+
+      {/* One radio per type */}
+      {types.map((type) => {
+        const typeCount = publications.filter((p) => p.type === type).length;
+        return (
+          <>
+            <input
+              type="radio"
+              name="pub-type"
+              id={`filter-${type}`}
+              value={type}
+              class={`sr-only peer/${type}`}
+            />
+            <label
+              for={`filter-${type}`}
+              class="filter-chip"
+            >
+              {pubTypeLabel(type)} ({typeCount})
+            </label>
+          </>
+        );
+      })}
+    </fieldset>
+  </div>
+
+  {/* ── Publication list ───────────────────────────────────────────── */}
+  <PubList publications={publications} />
+</PageLayout>
+
+<style>
+  /*
+   * CSS-only filter using :has() on the fieldset.
+   * When a type radio is checked, hide non-matching pub-card-containers.
+   *
+   * Progressive enhancement: if :has() is unsupported (very old browsers),
+   * all publications remain visible — graceful degradation.
+   */
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+    user-select: none;
+  }
+
+  .filter-chip:hover {
+    border-color: var(--color-accent-border);
+    color: var(--color-text);
+  }
+
+  /* Active filter chip styling */
+  input[type="radio"]:checked + .filter-chip {
+    color: var(--color-accent);
+    border-color: var(--color-accent-border);
+    background-color: var(--color-accent-bg);
+  }
+
+  /*
+   * Type filtering via CSS :has().
+   * Each pub-card has a data-pagefind-meta="type:xxx" attribute.
+   * When a specific type radio is checked, hide cards that don't match.
+   */
+  fieldset:has(#filter-article:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:article"])) {
+    display: none;
+  }
+  fieldset:has(#filter-inproceedings:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:inproceedings"])) {
+    display: none;
+  }
+  fieldset:has(#filter-book:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:book"])) {
+    display: none;
+  }
+  fieldset:has(#filter-phdthesis:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:phdthesis"])) {
+    display: none;
+  }
+  fieldset:has(#filter-mastersthesis:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:mastersthesis"])) {
+    display: none;
+  }
+  fieldset:has(#filter-misc:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:misc"])) {
+    display: none;
+  }
+  fieldset:has(#filter-incollection:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:incollection"])) {
+    display: none;
+  }
+  fieldset:has(#filter-techreport:checked) ~ :global(.pub-list .pub-card:not([data-pagefind-meta*="type:techreport"])) {
+    display: none;
+  }
+
+  /* Hide empty year sections when filtering */
+  fieldset:has(input:not(#filter-all):checked) ~ :global(.pub-list section:not(:has(.pub-card:not([style*="display: none"])))) {
+    /* Can't reliably hide empty sections with pure CSS since display:none
+       is set on the card, not via a class. Accept that year headers remain.
+       This is a known limitation of CSS-only filtering. */
+  }
+</style>

@@ -1,0 +1,111 @@
+---
+/**
+ * Footer.astro — Site-wide footer.
+ *
+ * Renders social links (with inline SVG icons + sr-only labels),
+ * footer navigation, institutional disclaimer, copyright, and
+ * "Built with Astro" attribution.
+ *
+ * Social icons use aria-hidden="true" with <span class="sr-only">
+ * for accessible names — screen readers announce the text label,
+ * sighted users see the icon.
+ */
+import { footerNav, socialLinks } from "@data/navigation";
+import { siteMetadata } from "@data/meta";
+import { sections } from "@data/settings";
+
+/** Build-time year for copyright notice */
+const currentYear = new Date().getFullYear();
+
+/** Section-to-path mapping — same as Nav.astro */
+const sectionPaths: Record<string, keyof typeof sections> = {
+  "/publications/": "publications",
+  "/projects/": "projects",
+  "/blog/": "blog",
+  "/notes/": "notes",
+  "/teaching/": "teaching",
+  "/cv/": "cv",
+  "/about/": "about",
+  "/contact/": "contact",
+};
+
+/** Filter footer nav by section settings — mirror Nav behavior */
+const filteredFooterNav = footerNav.filter((item) => {
+  const section = sectionPaths[item.href];
+  if (section && !sections[section]) return false;
+  return true;
+});
+---
+
+<footer class="mt-auto border-t border-[var(--color-border)] pt-10 pb-8 print:hidden" data-pagefind-ignore>
+  <div class="wide-container flex flex-col items-center">
+
+    {/* Social links */}
+    <div class="mb-6 flex items-center gap-2.5">
+      {socialLinks.map((link) => (
+        <a
+          href={link.href}
+          target={link.href.startsWith("http") ? "_blank" : undefined}
+          rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+          class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-muted)] transition-colors duration-150 hover:border-[var(--color-accent-border)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-bg)] no-underline"
+        >
+          <span class="sr-only">{link.label}</span>
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            {link.icon === "github" && (
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+            )}
+            {link.icon === "linkedin" && (
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+            )}
+            {link.icon === "orcid" && (
+              <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 01-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-1.847-1.163-3.722-3.916-3.722h-2.403z" />
+            )}
+            {link.icon === "scholar" && (
+              <path d="M12 0L0 9.5l4.84 3.94C6.36 10.5 8.96 8.5 12 8.5s5.64 2 7.16 4.94L24 9.5 12 0zM12 11a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z" />
+            )}
+            {link.icon === "email" && (
+              <Fragment>
+                <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+                <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+              </Fragment>
+            )}
+            {link.icon === "rss" && (
+              <path d="M5.636 18.364a2.121 2.121 0 11-3 3 2.121 2.121 0 013-3zm-2.122-4.95a7.071 7.071 0 017.071 7.071h-2.829a4.243 4.243 0 00-4.242-4.242V13.414zm0-4.95A12.02 12.02 0 0115.535 20.485h-2.829A9.192 9.192 0 003.514 11.293V8.464z" />
+            )}
+          </svg>
+        </a>
+      ))}
+    </div>
+
+    {/* Footer navigation */}
+    <nav class="mb-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2" aria-label="Footer navigation">
+      {filteredFooterNav.map((item) => (
+        <a
+          href={item.href}
+          class="font-mono text-[11px] tracking-wider text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)] no-underline"
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    {/* Disclaimer */}
+    {siteMetadata.footer.disclaimer && (
+      <p class="mx-auto mb-3 max-w-md px-4 text-center text-[9px] leading-relaxed text-[var(--color-muted)] opacity-40">
+        {siteMetadata.footer.disclaimer}
+      </p>
+    )}
+
+    {/* Copyright + attribution */}
+    <p class="text-center font-mono text-[10px] tracking-wider text-[var(--color-muted)] opacity-50">
+      © {currentYear} {siteMetadata.name}
+      <span class="mx-1.5">·</span>
+      Built with <a
+        href="https://astro.build"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors no-underline"
+      >Astro</a>
+    </p>
+  </div>
+</footer>

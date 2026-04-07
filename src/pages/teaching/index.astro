@@ -1,0 +1,60 @@
+---
+/**
+ * teaching/index.astro — Teaching listing page grouped by year.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Course = CollectionEntry<"teaching">;
+
+const allCourses: Course[] = await getCollection("teaching");
+const courses = allCourses
+  .filter((c: Course) => c.data.published)
+  .sort((a: Course, b: Course) => b.data.year - a.data.year);
+
+/** Group courses by year */
+const coursesByYear = new Map<number, typeof courses>();
+for (const course of courses) {
+  const year = course.data.year;
+  if (!coursesByYear.has(year)) coursesByYear.set(year, []);
+  coursesByYear.get(year)!.push(course);
+}
+
+const roleLabels: Record<string, string> = {
+  instructor: "Instructor",
+  ta: "Teaching Assistant",
+  "guest-lecturer": "Guest Lecturer",
+};
+---
+
+<PageLayout title="Teaching" subtitle="Courses and educational activities." activeNav="teaching">
+  {courses.length === 0 ? (
+    <p class="text-sm text-[var(--color-muted)]">No courses listed yet.</p>
+  ) : (
+    <div class="space-y-8">
+      {[...coursesByYear.entries()].map(([year, yearCourses]) => (
+        <section>
+          <h2 class="mb-3 font-mono text-sm font-medium text-[var(--color-text)]">{year}</h2>
+          <div class="space-y-1">
+            {yearCourses.map((course) => (
+              <a
+                href={`/teaching/${course.id}/`}
+                class="block rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-5 py-4 transition-colors hover:border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+              >
+                <div class="flex items-baseline justify-between gap-4">
+                  <span class="text-sm font-medium text-[var(--color-text)]">{course.data.title}</span>
+                  <span class="shrink-0 font-mono text-[11px] text-[var(--color-muted)]">
+                    {roleLabels[course.data.role] ?? course.data.role}
+                  </span>
+                </div>
+                <span class="mt-0.5 block text-xs text-[var(--color-muted)]">
+                  {course.data.semester} · {course.data.institution}
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )}
+</PageLayout>

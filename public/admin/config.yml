@@ -1,0 +1,640 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Sveltia CMS Configuration — Git-backed content management.
+#
+# This config defines the admin UI at /admin/ for managing all site content.
+# Every collection and field mirrors the Zod schemas in src/content.config.ts
+# exactly. Field names, types, defaults, and enums must stay in sync.
+#
+# Authentication:
+#   Option 1 (simplest): GitHub Personal Access Token (PAT)
+#     - Create a fine-grained PAT at github.com/settings/tokens with repo access
+#     - Enter it in the Sveltia CMS login screen — no backend needed
+#
+#   Option 2 (polished): GitHub OAuth via Sveltia CMS Authenticator
+#     - Deploy sveltia/sveltia-cms-auth to Cloudflare Workers
+#     - Add base_url to the backend config below
+#     - Users see a "Login with GitHub" button
+#
+# ⚠️  Replace "itgall/astro-academic-site" with your actual repo.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+backend:
+  name: github
+  repo: itgall/astro-academic-site
+  branch: main
+  # Uncomment and set if using Sveltia CMS Authenticator for OAuth:
+  # base_url: https://your-auth-worker.workers.dev
+
+media_folder: public/images/uploads
+public_folder: /images/uploads
+
+# ── Slug configuration ────────────────────────────────────────────────────────
+slug:
+  encoding: ascii
+  clean_accents: true
+  sanitize_replacement: "-"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTENT COLLECTIONS
+# Each folder collection maps to an Astro Content Collection in src/content/.
+# Fields must match the Zod schema in src/content.config.ts exactly.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+collections:
+
+  # ── Blog Posts ─────────────────────────────────────────────────────────────
+  # Schema: src/content.config.ts → posts collection
+  # Files: src/content/posts/*.md
+  - name: posts
+    label: "✍️ Blog Posts"
+    label_singular: "Post"
+    folder: src/content/posts
+    create: true
+    slug: "{{slug}}"
+    sortable_fields: [date, title, category]
+    summary: "{{title}} — {{category}} — {{date}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "Post title. Used in page <title>, Open Graph, and listings."
+
+      - label: Publish Date
+        name: date
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+
+      - label: Updated Date
+        name: updatedDate
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        required: false
+
+      - label: Category
+        name: category
+        widget: select
+        options:
+          - { label: "Technical Note", value: "technical" }
+          - { label: "Thesis", value: "thesis" }
+          - { label: "Essay", value: "essay" }
+          - { label: "Dispatch", value: "dispatch" }
+          - { label: "Build Log", value: "build-log" }
+        default: "technical"
+        hint: "Technical = rigorous deep dives. Thesis = field-level positions. Essay = considered writing. Dispatch = short observations. Build Log = project documentation."
+
+      - label: Description
+        name: description
+        widget: text
+        hint: "Short summary for SEO meta description and listings (≤160 chars)."
+
+      - label: Tags
+        name: tags
+        widget: list
+        default: []
+
+      - label: Published
+        name: published
+        widget: boolean
+        default: false
+        hint: "Toggle ON to make this post visible on the site."
+
+      - label: Featured
+        name: featured
+        widget: boolean
+        default: false
+        hint: "Featured posts appear prominently on the homepage."
+
+      - label: Open Graph Image
+        name: ogImage
+        widget: image
+        required: false
+        hint: "Custom social media preview image. Falls back to site default."
+
+      - label: Body
+        name: body
+        widget: markdown
+
+  # ── Research Projects ──────────────────────────────────────────────────────
+  # Schema: src/content.config.ts → projects collection
+  # Files: src/content/projects/*.md
+  - name: projects
+    label: "🔬 Projects"
+    label_singular: "Project"
+    folder: src/content/projects
+    create: true
+    slug: "{{slug}}"
+    sortable_fields: [date, title, number]
+    summary: "[{{number}}] {{title}} — {{institution}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+
+      - label: Project Number
+        name: number
+        widget: string
+        default: "99"
+        hint: "Display order number (e.g., 01, 02, 03)."
+
+      - label: Date
+        name: date
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+
+      - label: Tags
+        name: tags
+        widget: list
+        default: []
+
+      - label: Highlight Tag
+        name: highlightTag
+        widget: string
+        required: false
+        hint: "One tag to visually highlight in the project card."
+
+      - label: Institution
+        name: institution
+        widget: string
+        hint: "Where this work was done (e.g., MIT, Stanford)."
+
+      - label: Content Mode
+        name: contentMode
+        widget: select
+        options:
+          - { label: "Structured (Problem / Outcomes / Impact)", value: "structured" }
+          - { label: "Freeform (rich content editor)", value: "freeform" }
+        default: "structured"
+        hint: "Structured = three fixed sections. Freeform = single rich editor."
+
+      # ── Structured content fields (used when contentMode = structured) ──
+      - label: "The Problem"
+        name: problem
+        widget: markdown
+        required: false
+
+      - label: "Outcomes"
+        name: outcomes
+        widget: list
+        required: false
+        default: []
+        field: { label: "Outcome", name: outcome, widget: string }
+
+      - label: "Why It Matters"
+        name: impact
+        widget: markdown
+        required: false
+
+      # ── Media ──
+      - label: Hero Image
+        name: heroImage
+        widget: image
+        required: false
+
+      - label: Hero Image Caption
+        name: heroCaption
+        widget: string
+        required: false
+
+      - label: Video URL
+        name: videoUrl
+        widget: string
+        required: false
+        default: ""
+        hint: "YouTube or Vimeo URL."
+
+      - label: Interactive URL
+        name: interactiveUrl
+        widget: string
+        required: false
+        hint: "Path to an interactive demo (e.g., /interactives/demo.html)."
+
+      - label: Interactive Height (px)
+        name: interactiveHeight
+        widget: number
+        required: false
+        default: 500
+
+      - label: Gallery Images
+        name: gallery
+        widget: list
+        required: false
+        default: []
+        fields:
+          - { label: "Image", name: image, widget: image }
+          - { label: "Caption", name: caption, widget: string, required: false, default: "" }
+
+      # ── Links & Tech ──
+      - label: Tech Stack
+        name: techStack
+        widget: list
+        default: []
+        field: { label: "Technology", name: tech, widget: string }
+
+      - label: Link URL
+        name: linkUrl
+        widget: string
+        required: false
+        default: ""
+
+      - label: Link Text
+        name: linkText
+        widget: string
+        required: false
+        default: "View presentation →"
+
+      - label: GitHub URL
+        name: githubUrl
+        widget: string
+        required: false
+        default: ""
+
+      - label: Related Publications
+        name: relatedPublications
+        widget: list
+        default: []
+        hint: "BibTeX citation keys from bibliography.bib (e.g., doe2026ssoct)."
+        field: { label: "Citation Key", name: key, widget: string }
+
+      - label: Published
+        name: published
+        widget: boolean
+        default: true
+
+      - label: Body
+        name: body
+        widget: markdown
+        required: false
+
+  # ── Teaching ───────────────────────────────────────────────────────────────
+  # Schema: src/content.config.ts → teaching collection
+  # Files: src/content/teaching/*.md
+  - name: teaching
+    label: "🎓 Teaching"
+    label_singular: "Course"
+    folder: src/content/teaching
+    create: true
+    slug: "{{slug}}"
+    sortable_fields: [year, title]
+    summary: "{{title}} — {{semester}} {{year}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        hint: "Course title (e.g., Introduction to Optics)."
+
+      - label: Course Code
+        name: courseCode
+        widget: string
+        required: false
+        hint: "e.g., PHYS 320, CS 101."
+
+      - label: Role
+        name: role
+        widget: select
+        options:
+          - { label: "Instructor", value: "instructor" }
+          - { label: "Teaching Assistant", value: "ta" }
+          - { label: "Guest Lecturer", value: "guest-lecturer" }
+        default: "ta"
+
+      - label: Institution
+        name: institution
+        widget: string
+
+      - label: Semester
+        name: semester
+        widget: string
+        hint: "e.g., Fall 2025, Spring 2026."
+
+      - label: Year
+        name: year
+        widget: number
+        value_type: int
+
+      - label: Description
+        name: description
+        widget: text
+        required: false
+        default: ""
+
+      - label: Tags
+        name: tags
+        widget: list
+        default: []
+
+      - label: Syllabus URL
+        name: syllabusUrl
+        widget: string
+        required: false
+        hint: "Link to the course syllabus."
+
+      - label: Published
+        name: published
+        widget: boolean
+        default: true
+
+      - label: Body
+        name: body
+        widget: markdown
+        required: false
+
+  # ── Digital Garden Notes ───────────────────────────────────────────────────
+  # Schema: src/content.config.ts → notes collection
+  # Files: src/content/notes/*.md
+  - name: notes
+    label: "🌱 Notes"
+    label_singular: "Note"
+    folder: src/content/notes
+    create: true
+    slug: "{{slug}}"
+    sortable_fields: [date, title, maturity]
+    summary: "{{title}} — {{maturity}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+
+      - label: Date
+        name: date
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+
+      - label: Updated Date
+        name: updatedDate
+        widget: datetime
+        format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        required: false
+
+      - label: Maturity
+        name: maturity
+        widget: select
+        options:
+          - { label: "🌱 Seedling", value: "seedling" }
+          - { label: "🌿 Budding", value: "budding" }
+          - { label: "🌳 Evergreen", value: "evergreen" }
+        default: "seedling"
+        hint: "Seedling = early idea. Budding = developing. Evergreen = mature and maintained."
+
+      - label: Description
+        name: description
+        widget: text
+        required: false
+        default: ""
+
+      - label: Tags
+        name: tags
+        widget: list
+        default: []
+
+      - label: Published
+        name: published
+        widget: boolean
+        default: true
+
+      - label: Body
+        name: body
+        widget: markdown
+        hint: "Use [[double brackets]] to create wiki-links to other notes."
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DATA FILES
+  # File collections for structured data that isn't Markdown content.
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ── CV Data ────────────────────────────────────────────────────────────────
+  # File: src/data/cv.yaml
+  # Rendered by: src/pages/cv.astro
+  - name: data
+    label: "⚙️ Site Data"
+    files:
+      - name: cv
+        label: "📄 CV / Resume"
+        file: src/data/cv.yaml
+        fields:
+          - label: Full Name
+            name: name
+            widget: string
+
+          - label: Professional Title
+            name: title
+            widget: string
+
+          - label: Affiliation
+            name: affiliation
+            widget: string
+            hint: "Primary institutional affiliation."
+
+          - label: Email
+            name: email
+            widget: string
+
+          - label: Website
+            name: website
+            widget: string
+
+          - label: ORCID
+            name: orcid
+            widget: string
+            hint: "e.g., 0000-0002-1234-5678"
+
+          - label: Research Interests
+            name: research_interests
+            widget: list
+            field: { label: "Interest", name: interest, widget: string }
+
+          - label: Education
+            name: education
+            widget: list
+            fields:
+              - { label: "Degree", name: degree, widget: string }
+              - { label: "Institution", name: institution, widget: string }
+              - { label: "Location", name: location, widget: string }
+              - { label: "Dates", name: dates, widget: string }
+              - { label: "GPA", name: gpa, widget: string, required: false }
+              - label: "Honors"
+                name: honors
+                widget: list
+                required: false
+                default: []
+                field: { label: "Honor", name: honor, widget: string }
+
+          - label: Experience
+            name: experience
+            widget: list
+            fields:
+              - { label: "Title", name: title, widget: string }
+              - { label: "Organization", name: organization, widget: string }
+              - { label: "Parent Organization", name: parent, widget: string, required: false }
+              - { label: "Location", name: location, widget: string }
+              - { label: "Dates", name: dates, widget: string }
+              - { label: "Current Position", name: current, widget: boolean, default: false }
+              - label: "Highlights"
+                name: highlights
+                widget: list
+                required: false
+                default: []
+                field: { label: "Highlight", name: highlight, widget: string }
+
+          - label: Skills
+            name: skills
+            widget: list
+            fields:
+              - { label: "Category", name: category, widget: string }
+              - label: "Items"
+                name: items
+                widget: list
+                field: { label: "Skill", name: skill, widget: string }
+
+          - label: Research Experience
+            name: research
+            widget: list
+            required: false
+            default: []
+            fields:
+              - { label: "Title", name: title, widget: string }
+              - { label: "Institution", name: institution, widget: string }
+              - { label: "Dates", name: dates, widget: string }
+              - { label: "Description", name: description, widget: text }
+
+          - label: Teaching
+            name: teaching
+            widget: list
+            required: false
+            default: []
+            fields:
+              - { label: "Role", name: role, widget: string }
+              - { label: "Course", name: course, widget: string }
+              - { label: "Institution", name: institution, widget: string }
+              - { label: "Dates", name: dates, widget: string }
+
+          - label: Awards & Fellowships
+            name: awards
+            widget: list
+            required: false
+            default: []
+            field: { label: "Award", name: award, widget: string }
+
+          - label: Professional Service
+            name: service
+            widget: list
+            required: false
+            default: []
+            field: { label: "Service", name: service, widget: string }
+
+          - label: Selected Talks
+            name: talks
+            widget: list
+            required: false
+            default: []
+            field: { label: "Talk", name: talk, widget: string }
+
+      # ── Publications (BibTeX) ──────────────────────────────────────────────
+      # File: src/data/bibliography.bib
+      # Parsed by: src/utils/bibtex.ts
+      - name: bibliography
+        label: "📚 Publications (BibTeX)"
+        file: src/data/bibliography.bib
+        extension: bib
+        format: raw
+        fields:
+          - label: BibTeX Entries
+            name: body
+            widget: code
+            default_language: bibtex
+            output_code_only: true
+            hint: "Edit BibTeX entries directly. Each @article{...}, @inproceedings{...}, etc. generates a publication page with Highwire Press meta tags."
+
+      # ── Site Settings ──────────────────────────────────────────────────────
+      # File: src/data/settings.json
+      # Read by: src/data/settings.ts → consumed by layouts and components
+      - name: settings
+        label: "🎛️ Features & Appearance"
+        file: src/data/settings.json
+        fields:
+          - label: Features
+            name: features
+            widget: object
+            fields:
+              - { label: "⚠️ Maintenance Mode", name: maintenanceMode, widget: boolean, default: false, hint: "Block all site content with an 'under construction' overlay. Bypass with ?preview=true in the URL." }
+              - { label: "Sidenotes", name: sidenotes, widget: boolean, default: true, hint: "Transform footnotes into Tufte-style margin notes." }
+              - label: "Default Accent Color"
+                name: defaultAccent
+                widget: select
+                options:
+                  - { label: "🟢 Mint", value: "mint" }
+                  - { label: "🔵 Blue", value: "blue" }
+                  - { label: "🟣 Violet", value: "violet" }
+                  - { label: "🔴 Rose", value: "rose" }
+                  - { label: "🟡 Amber", value: "amber" }
+                  - { label: "🔵 Cyan", value: "cyan" }
+                  - { label: "🟢 Teal", value: "teal" }
+                  - { label: "🟠 Orange", value: "orange" }
+                default: "mint"
+                hint: "Default accent color for new visitors. Users can override with the accent picker."
+              - { label: "Sidenotes", name: sidenotes, widget: boolean, default: true, hint: "Transform footnotes into Tufte-style margin notes." }
+              - { label: "Backlinks", name: backlinks, widget: boolean, default: true, hint: "Show bidirectional backlink panels on content pages." }
+              - { label: "Table of Contents", name: tableOfContents, widget: boolean, default: true, hint: "Show table of contents on blog posts." }
+              - { label: "Link Previews", name: linkPreviews, widget: boolean, default: true, hint: "Show hover/focus link preview popovers." }
+              - { label: "Search Page", name: searchPage, widget: boolean, default: true, hint: "Enable the /search/ page with Pagefind full-text search." }
+              - { label: "Research Graph", name: researchGraph, widget: boolean, default: true, hint: "Enable the /graph/ page with D3 force-directed visualization." }
+              - { label: "Content Maturity Badges", name: contentMaturityBadges, widget: boolean, default: true, hint: "Show seedling/budding/evergreen badges on notes." }
+              - { label: "Copy Code Button", name: copyCodeButton, widget: boolean, default: true, hint: "Show copy button on code blocks." }
+              - { label: "Image Zoom", name: imageZoom, widget: boolean, default: true, hint: "Click-to-zoom on images inside article content." }
+              - { label: "Document Viewer", name: documentViewer, widget: boolean, default: true, hint: "Inline PDF/document preview overlay. Links with data-doc-viewer open in an overlay instead of navigating away." }
+              - { label: "Reading Progress Bar", name: readingProgressBar, widget: boolean, default: false, hint: "Show reading progress bar on article pages." }
+              - { label: "Command Palette (⌘K)", name: commandPalette, widget: boolean, default: false, hint: "Enable ⌘K / Ctrl+K keyboard shortcut for quick navigation." }
+              - { label: "Visual Effects", name: visualEffects, widget: boolean, default: false, hint: "Enable ambient canvas visual effects (particles, dust)." }
+              - { label: "AI Chat Widget", name: chatWidget, widget: boolean, default: false, hint: "Enable AI-powered chat widget for visitor questions." }
+              - { label: "Document Request Modal", name: documentRequestModal, widget: boolean, default: true, hint: "Enable gated CV/resume access — visitors submit a form to request documents." }
+
+          - label: Sections
+            name: sections
+            widget: object
+            hint: "Toggle site sections on or off. Disabled sections are hidden from navigation."
+            fields:
+              - { label: "Publications", name: publications, widget: boolean, default: true }
+              - { label: "Projects", name: projects, widget: boolean, default: true }
+              - { label: "Blog", name: blog, widget: boolean, default: true }
+              - { label: "Notes", name: notes, widget: boolean, default: true }
+              - { label: "Teaching", name: teaching, widget: boolean, default: true }
+              - { label: "CV", name: cv, widget: boolean, default: true }
+              - { label: "About", name: about, widget: boolean, default: true }
+              - { label: "Contact", name: contact, widget: boolean, default: true }
+
+          - label: Appearance
+            name: appearance
+            widget: object
+            fields:
+              - label: "Default Theme"
+                name: defaultTheme
+                widget: select
+                options:
+                  - { label: "Dark", value: "dark" }
+                  - { label: "Light", value: "light" }
+                  - { label: "System (follows visitor's OS)", value: "system" }
+                default: "dark"
+                hint: "Site-wide color theme. 'System' respects the visitor's OS light/dark preference."
+              - label: "Loading Animation"
+                name: loadingAnimation
+                widget: select
+                options:
+                  - { label: "None", value: "none" }
+                  - { label: "Monogram", value: "monogram" }
+                  - { label: "Terminal", value: "terminal" }
+                  - { label: "Pulse", value: "pulse" }
+                  - { label: "Name Reveal", value: "name" }
+                default: "none"
+                hint: "Loading animation shown before the page renders."
+              - { label: "View Transitions", name: viewTransitions, widget: boolean, default: true, hint: "Smooth page transitions powered by the Astro View Transitions API." }
+              - { label: "Scroll Reveal", name: scrollReveal, widget: boolean, default: false, hint: "Fade/slide elements in as they enter the viewport." }
+              - { label: "Custom Cursor", name: customCursor, widget: boolean, default: false, hint: "Use custom SVG cursor themed to the accent color." }

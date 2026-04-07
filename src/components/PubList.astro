@@ -1,0 +1,42 @@
+---
+/**
+ * PubList.astro — Grouped Publication Listing.
+ *
+ * Renders publications grouped by year with <h2> section dividers.
+ * Each entry is a PubCard with Pagefind search indexing attributes.
+ * Used on the publications index page and can be reused in filtered views.
+ */
+import type { Publication } from "@utils/bibtex";
+import { groupByYear } from "@utils/bibtex";
+import PubCard from "./PubCard.astro";
+
+interface Props {
+  publications: Publication[];
+  /** Show abstract excerpts on cards (default: false) */
+  showAbstracts?: boolean;
+}
+
+const { publications, showAbstracts = false } = Astro.props;
+
+/** Group by year for section dividers, sorted newest-first */
+const grouped = groupByYear(publications);
+const years = [...grouped.keys()].sort((a, b) => b - a);
+---
+
+<div class="pub-list space-y-10">
+  {years.map((year) => {
+    const pubs = grouped.get(year) ?? [];
+    return (
+      <section>
+        <h2 class="mb-4 font-mono text-sm font-medium text-[var(--color-muted)] tracking-wider">
+          {year}
+        </h2>
+        <div class="space-y-3">
+          {pubs.map((pub) => (
+            <PubCard pub={pub} showAbstract={showAbstracts} />
+          ))}
+        </div>
+      </section>
+    );
+  })}
+</div>

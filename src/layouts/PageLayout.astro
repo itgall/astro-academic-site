@@ -1,0 +1,45 @@
+---
+/**
+ * PageLayout.astro — Generic content page wrapper.
+ *
+ * Adds a page header (title + optional subtitle) with view-transition-name
+ * for animated title morphing, and constrains content width.
+ * Used by: about, contact, search, and other non-article pages.
+ */
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  activeNav?: string;
+  /** Subtitle shown below the page title */
+  subtitle?: string;
+  /** Load MathJax for math rendering */
+  useMath?: boolean;
+}
+
+const { title, description, ogImage, activeNav, subtitle, useMath } = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogImage={ogImage}
+  activeNav={activeNav}
+  useMath={useMath}
+>
+  <div class="wide-container py-16">
+    <header class="mb-12 border-b border-[var(--color-border)] pb-8">
+      <h1 class="vt-page-title text-3xl font-semibold tracking-tight text-[var(--color-text)] md:text-4xl leading-tight">
+        {title}
+      </h1>
+      {subtitle && (
+        <p class="mt-3 max-w-xl text-base text-[var(--color-muted)] leading-relaxed">
+          {subtitle}
+        </p>
+      )}
+    </header>
+    <slot />
+  </div>
+</BaseLayout>

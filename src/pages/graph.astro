@@ -1,0 +1,36 @@
+---
+/**
+ * graph.astro — Research knowledge graph page.
+ *
+ * Renders an interactive D3 force-directed graph of all content pages
+ * and their bidirectional links. The link graph data is computed at
+ * build time by the backlinks utility and embedded as a JSON block.
+ *
+ * D3.js is dynamically imported by the ResearchGraph island, ensuring
+ * it loads ONLY on this page (not bundled into other pages).
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import ResearchGraph from "@islands/ResearchGraph";
+import { getLinkGraph } from "@utils/backlinks";
+
+/** Compute the link graph at build time */
+const linkGraph = await getLinkGraph();
+---
+
+<PageLayout
+  title="Research Graph"
+  description="Interactive map of research connections across publications, projects, blog posts, and notes."
+  subtitle="Explore connections between research topics. Click a node to navigate, drag to rearrange, scroll to zoom."
+  activeNav="graph"
+>
+  {/* Link graph data — consumed by the ResearchGraph island */}
+  <script
+    type="application/json"
+    id="link-graph-data"
+    is:inline
+    set:html={JSON.stringify(linkGraph)}
+  />
+
+  {/* client:load — the graph IS the page content, must load immediately */}
+  <ResearchGraph client:load />
+</PageLayout>

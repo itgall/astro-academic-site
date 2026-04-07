@@ -1,0 +1,169 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Quality Gates — Pull Request Checks
+#
+# Runs on PRs to main. Builds the site, then runs link checking (lychee),
+# accessibility testing (Pa11y CI), and performance assertions (Lighthouse CI)
+# in parallel using artifacts for the built site.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Build job — produces dist/ artifact for downstream checks ────────────
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: TypeScript check
+        run: npm run check
+
+      - name: Build site
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Generate Pagefind search index
+        run: npx pagefind --site dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ── Link checking with lychee ────────────────────────────────────────────
+  links:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Check links with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --verbose
+            --no-progress
+            --accept 200,204,301,302,403,429
+            --exclude-path dist/pagefind
+            --exclude 'scholar.google.com'
+            --exclude 'linkedin.com'
+            dist/
+          fail: true
+
+  # ── Accessibility testing with Pa11y CI ──────────────────────────────────
+  accessibility:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (for config files)
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Pa11y CI and serve
+        run: npm install -g pa11y-ci serve
+
+      - name: Run Pa11y CI
+        run: |
+          # Start a local server in the background
+          serve dist -l 8080 &
+          SERVER_PID=$!
+          sleep 3
+
+          # Run Pa11y against key pages with WCAG2AA standard
+          pa11y-ci \
+            --standard WCAG2AA \
+            --threshold 0 \
+            http://localhost:8080/ \
+            http://localhost:8080/publications/ \
+            http://localhost:8080/blog/ \
+            http://localhost:8080/cv/ \
+            http://localhost:8080/search/ \
+            http://localhost:8080/notes/ \
+            http://localhost:8080/projects/ \
+            http://localhost:8080/about/ \
+            http://localhost:8080/contact/ \
+            || EXIT_CODE=$?
+
+          kill $SERVER_PID 2>/dev/null || true
+          exit ${EXIT_CODE:-0}
+
+  # ── Performance testing with Lighthouse CI ───────────────────────────────
+  lighthouse:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (for config files)
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli serve
+
+      - name: Run Lighthouse CI
+        run: |
+          serve dist -l 8080 &
+          SERVER_PID=$!
+          sleep 3
+
+          lhci autorun \
+            --collect.url=http://localhost:8080/ \
+            --collect.url=http://localhost:8080/publications/ \
+            --collect.url=http://localhost:8080/blog/ \
+            --collect.url=http://localhost:8080/cv/ \
+            --assert.preset=lighthouse:recommended \
+            --assert.assertions.categories:performance=off \
+            --assert.assertions.categories:accessibility="error; minScore=0.95" \
+            --assert.assertions.categories:best-practices="error; minScore=0.95" \
+            --assert.assertions.categories:seo="error; minScore=0.95" \
+            || EXIT_CODE=$?
+
+          kill $SERVER_PID 2>/dev/null || true
+          exit ${EXIT_CODE:-0}

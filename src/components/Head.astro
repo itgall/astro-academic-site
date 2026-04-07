@@ -1,0 +1,133 @@
+---
+/**
+ * Head.astro — <head> contents for every page.
+ *
+ * Renders: charset, viewport, title, meta description, canonical URL,
+ * Open Graph tags, Twitter Card tags (summary_large_image), favicon,
+ * RSS feed link, and JSON-LD structured data.
+ *
+ * JSON-LD strategy:
+ *   - WebSite schema on every page
+ *   - Person schema only on homepage (pageType === "home")
+ *   - Article/publication schemas handled by their respective layouts
+ *
+ * Google Scholar citation meta tags are handled separately by
+ * ScholarMeta.astro (rendered on publication pages only).
+ */
+import { siteMetadata } from "@data/meta";
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  canonicalUrl: string;
+  /** Controls which JSON-LD schemas are emitted */
+  pageType?: "home" | "page" | "article" | "publication";
+}
+
+const {
+  title,
+  description,
+  ogImage,
+  canonicalUrl,
+  pageType = "page",
+} = Astro.props;
+
+const ogImageUrl = ogImage
+  ? new URL(ogImage, siteMetadata.siteUrl).href
+  : new URL(siteMetadata.image, siteMetadata.siteUrl).href;
+
+/**
+ * Build the JSON-LD graph.
+ * WebSite is always included. Person is homepage-only to avoid
+ * duplicate entity declarations across pages.
+ */
+const jsonLdGraph: Record<string, unknown>[] = [
+  {
+    "@type": "WebSite",
+    "@id": `${siteMetadata.siteUrl}/#website`,
+    url: siteMetadata.siteUrl,
+    name: siteMetadata.title,
+    description: siteMetadata.description,
+    publisher: { "@id": `${siteMetadata.siteUrl}/#person` },
+  },
+];
+
+if (pageType === "home") {
+  jsonLdGraph.unshift({
+    "@type": "Person",
+    "@id": `${siteMetadata.siteUrl}/#person`,
+    name: siteMetadata.name,
+    givenName: siteMetadata.name.split(" ")[0] ?? "",
+    familyName: siteMetadata.name.split(" ").slice(1).join(" "),
+    url: siteMetadata.siteUrl,
+    image: `${siteMetadata.siteUrl}${siteMetadata.image}`,
+    jobTitle: siteMetadata.role,
+    disambiguatingDescription: siteMetadata.description,
+    worksFor: siteMetadata.affiliations.map((aff) => ({
+      "@type": "Organization",
+      name: aff.name,
+      ...(aff.parent && {
+        parentOrganization: { "@type": "Organization", name: aff.parent },
+      }),
+    })),
+    alumniOf: {
+      "@type": "CollegeOrUniversity",
+      name: "Example University",
+    },
+    knowsAbout: siteMetadata.knowsAbout,
+    sameAs: [
+      siteMetadata.contact.linkedin,
+      siteMetadata.contact.github,
+      siteMetadata.contact.googleScholar,
+      `https://orcid.org/${siteMetadata.contact.orcid}`,
+    ].filter(Boolean),
+  });
+}
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0e1117" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="author" content={siteMetadata.name} />
+<meta name="generator" content={Astro.generator} />
+<meta name="robots" content="index, follow, noai, noimageai" />
+<link rel="canonical" href={canonicalUrl} />
+
+{/* Favicon */}
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+{/* RSS feed */}
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={`${siteMetadata.title} RSS Feed`}
+  href="/rss.xml"
+/>
+
+{/* Open Graph */}
+<meta property="og:type" content={pageType === "article" ? "article" : "website"} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:site_name" content={siteMetadata.title} />
+
+{/* Twitter Card — summary_large_image for better social sharing */}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+
+{/* JSON-LD Structured Data */}
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": jsonLdGraph,
+  })}
+/>

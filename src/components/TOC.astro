@@ -1,0 +1,74 @@
+---
+/**
+ * TOC.astro — Table of Contents component.
+ *
+ * Receives an array of headings (extracted from rendered Markdown content)
+ * and renders a navigable table of contents.
+ *
+ * Responsive behavior:
+ *   - Narrow screens: collapses into a <details>/<summary> disclosure
+ *   - Wide screens: renders as a visible sidebar-style nav
+ *
+ * Only renders h2 and h3 headings. h3 entries are indented under their
+ * parent h2 to show document structure.
+ *
+ * Accessibility: <nav aria-label="Table of contents"> with ordered list.
+ */
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+
+/** Filter to only h2 and h3 for a clean, scannable TOC */
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{tocHeadings.length > 0 && (
+  <nav aria-label="Table of contents" class="toc-wrapper">
+    {/* Narrow screens: collapsible disclosure */}
+    <details class="toc-disclosure md:hidden rounded-md border border-[var(--color-border)] bg-[var(--color-bg-off)] mb-8">
+      <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-[var(--color-text)] select-none">
+        Table of Contents
+      </summary>
+      <ol class="list-none px-4 pb-4 space-y-1">
+        {tocHeadings.map((heading) => (
+          <li class:list={[heading.depth === 3 && "ml-4"]}>
+            <a
+              href={`#${heading.slug}`}
+              class="block py-1 text-xs text-[var(--color-muted)] no-underline hover:text-[var(--color-link)] transition-colors"
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </details>
+
+    {/* Wide screens: visible sidebar-style list */}
+    <div class="hidden md:block rounded-md border border-[var(--color-border)] bg-[var(--color-bg-off)] px-5 py-4 mb-8">
+      <h2 class="mb-3 font-mono text-[11px] font-medium tracking-wider text-[var(--color-muted)] uppercase">
+        Contents
+      </h2>
+      <ol class="list-none space-y-1">
+        {tocHeadings.map((heading) => (
+          <li class:list={[heading.depth === 3 && "ml-4"]}>
+            <a
+              href={`#${heading.slug}`}
+              class="block py-1 text-xs text-[var(--color-muted)] no-underline hover:text-[var(--color-link)] transition-colors leading-snug"
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </nav>
+)}

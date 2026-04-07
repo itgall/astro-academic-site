@@ -1,0 +1,66 @@
+---
+/**
+ * ScholarMeta.astro — Highwire Press Meta Tags for Google Scholar.
+ *
+ * These meta tags are the PRIMARY mechanism for Google Scholar indexing.
+ * Google Scholar preferentially reads Highwire Press tags over Dublin Core,
+ * PRISM, or Eprints tags.
+ *
+ * CRITICAL: Only render tags for fields that exist. No empty content attributes.
+ * Google Scholar penalizes pages with empty or malformed citation tags.
+ *
+ * Reference: https://scholar.google.com/intl/en/scholar/inclusion.html
+ *
+ * This component renders inside <head> via BaseLayout's named "head" slot.
+ */
+import type { Publication } from "@utils/bibtex";
+import { formatScholarDate } from "@utils/bibtex";
+import { siteMetadata } from "@data/meta";
+
+interface Props {
+  pub: Publication;
+}
+
+const { pub } = Astro.props;
+
+/**
+ * Format author name as "Last, First" for citation_author tags.
+ * Google Scholar requires this format for proper author disambiguation.
+ */
+function formatScholarAuthor(author: { first: string; last: string }): string {
+  if (!author.first) return author.last;
+  return `${author.last}, ${author.first}`;
+}
+
+const scholarDate = formatScholarDate(pub.year, pub.month);
+const pdfUrl = pub.pdfPath
+  ? new URL(pub.pdfPath, siteMetadata.siteUrl).href
+  : undefined;
+---
+
+{/* ── Highwire Press meta tags — Google Scholar's preferred format ──────── */}
+<meta name="citation_title" content={pub.title} />
+
+{/* One <meta> per author, in "Last, First" format (Scholar requirement) */}
+{pub.authors.map((a) => (
+  <meta name="citation_author" content={formatScholarAuthor(a)} />
+))}
+
+<meta name="citation_publication_date" content={scholarDate} />
+
+{/* Conditional: journal article vs conference paper vs other */}
+{pub.journal && <meta name="citation_journal_title" content={pub.journal} />}
+{pub.booktitle && <meta name="citation_conference_title" content={pub.booktitle} />}
+
+{pub.volume && <meta name="citation_volume" content={pub.volume} />}
+{pub.number && <meta name="citation_issue" content={pub.number} />}
+{pub.firstpage && <meta name="citation_firstpage" content={pub.firstpage} />}
+{pub.lastpage && <meta name="citation_lastpage" content={pub.lastpage} />}
+{pub.doi && <meta name="citation_doi" content={pub.doi} />}
+{pdfUrl && <meta name="citation_pdf_url" content={pdfUrl} />}
+{pub.arxivId && <meta name="citation_arxiv_id" content={pub.arxivId} />}
+{pub.issn && <meta name="citation_issn" content={pub.issn} />}
+{pub.isbn && <meta name="citation_isbn" content={pub.isbn} />}
+{pub.publisher && <meta name="citation_publisher" content={pub.publisher} />}
+{pub.institution && <meta name="citation_technical_report_institution" content={pub.institution} />}
+{pub.abstract && <meta name="citation_abstract" content={pub.abstract} />}

@@ -1,0 +1,46 @@
+---
+/**
+ * blog/tags/[tag].astro — Posts filtered by tag.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import PostCard from "@components/PostCard.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Post = CollectionEntry<"posts">;
+
+export async function getStaticPaths() {
+  const posts: Post[] = await getCollection("posts", ({ data }: Post) => data.published);
+  const tags = [...new Set(posts.flatMap((p: Post) => p.data.tags))];
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: posts
+        .filter((p: Post) => p.data.tags.includes(tag))
+        .sort((a: Post, b: Post) => b.data.date.getTime() - a.data.date.getTime()),
+    },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+---
+
+<PageLayout
+  title={`Tag: ${tag}`}
+  subtitle={`${posts.length} post${posts.length === 1 ? "" : "s"} tagged "${tag}".`}
+  activeNav="blog"
+>
+  <div class="mb-4">
+    <a
+      href="/blog/"
+      class="font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors"
+    >
+      ← All posts
+    </a>
+  </div>
+  <div class="space-y-2">
+    {posts.map((post: any) => (
+      <PostCard post={post} />
+    ))}
+  </div>
+</PageLayout>

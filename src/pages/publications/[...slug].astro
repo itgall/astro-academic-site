@@ -1,0 +1,37 @@
+---
+/**
+ * publications/[...slug].astro — Individual Publication Page.
+ *
+ * Dynamic route: generates one page per BibTeX entry in bibliography.bib.
+ * Each page includes:
+ *   - Highwire Press meta tags (ScholarMeta via PublicationLayout)
+ *   - JSON-LD ScholarlyArticle structured data
+ *   - Large title, author list, venue, abstract (Google Scholar requirements)
+ *   - Action buttons for PDF, DOI, arXiv, BibTeX copy, citation copy
+ *   - Keywords as tag chips
+ *
+ * Generation approach: getStaticPaths() with parseBibliography().
+ * The Content Layer API custom loader approach was evaluated but
+ * getStaticPaths is more straightforward for BibTeX data that doesn't
+ * need Markdown rendering or Astro's collection query API.
+ */
+import PublicationLayout from "@layouts/PublicationLayout.astro";
+import { parseBibliography } from "@utils/bibtex";
+import type { Publication } from "@utils/bibtex";
+
+export async function getStaticPaths() {
+  const publications = await parseBibliography();
+  return publications.map((pub) => ({
+    params: { slug: pub.slug },
+    props: { pub },
+  }));
+}
+
+interface Props {
+  pub: Publication;
+}
+
+const { pub } = Astro.props;
+---
+
+<PublicationLayout pub={pub} />

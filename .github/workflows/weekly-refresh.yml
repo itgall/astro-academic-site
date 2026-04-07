@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Weekly Citation Refresh
+#
+# Runs every Sunday at midnight UTC. Fetches updated citation counts from
+# Semantic Scholar API for all publications with DOIs. Commits changes
+# to src/data/citations.json if counts have changed.
+#
+# Manual trigger available via workflow_dispatch for ad-hoc refreshes.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Weekly Citation Refresh
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"   # Sunday midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Refresh citation counts
+        run: npx tsx scripts/refresh-citations.ts
+
+      - name: Commit updated citations
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: refresh citation counts [skip ci]"
+          file_pattern: "src/data/citations.json"

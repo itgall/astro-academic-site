@@ -1,0 +1,76 @@
+---
+/**
+ * search.astro — Pagefind-powered search page.
+ *
+ * Uses PageLayout with SearchWidget island (client:load — search is the
+ * page's primary purpose, must be immediately interactive).
+ *
+ * Includes:
+ *   - No-JS fallback directing users to Google site: search
+ *   - JSON-LD WebSite + SearchAction for Google sitelinks search box
+ *   - data-pagefind-body excluded (search page itself shouldn't be indexed)
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import SearchWidget from "@islands/SearchWidget";
+import { siteMetadata } from "@data/meta";
+
+/**
+ * JSON-LD SearchAction — enables Google's sitelinks search box.
+ * https://developers.google.com/search/docs/appearance/structured-data/sitelinks-searchbox
+ */
+const searchJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteMetadata.siteUrl}/#website`,
+  url: siteMetadata.siteUrl,
+  name: siteMetadata.title,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteMetadata.siteUrl}/search/?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+---
+
+<PageLayout
+  title="Search"
+  subtitle="Search across all publications, posts, projects, and notes."
+  activeNav="search"
+>
+  {/* JSON-LD SearchAction for Google sitelinks search box */}
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(searchJsonLd)}
+  />
+
+  <div data-pagefind-ignore>
+    {/* No-JS fallback — hidden when JS loads the search widget */}
+    <noscript>
+      <div
+        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] p-6 text-sm text-[var(--color-text-secondary)]"
+      >
+        <p class="mb-2 font-medium text-[var(--color-text)]">
+          JavaScript is required for on-site search.
+        </p>
+        <p>
+          You can search this site using Google:
+          <a
+            href="https://www.google.com/search?q=site:your-domain.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-[var(--color-link)] underline"
+          >
+            site:your-domain.com
+          </a>
+        </p>
+      </div>
+    </noscript>
+
+    {/* Pagefind search island — immediately interactive */}
+    <SearchWidget client:load />
+  </div>
+</PageLayout>

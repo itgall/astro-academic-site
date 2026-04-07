@@ -1,0 +1,243 @@
+/**
+ * pub-card.css — Publication Card Component Styles.
+ *
+ * Uses CSS Container Queries (@container) so the card adapts its layout
+ * based on container width, not viewport width. This makes the card
+ * reusable in sidebars, main content, and full-width listings.
+ *
+ * Uses CSS :has() for conditional visual indicators:
+ *   - PDF available → green left accent border
+ *   - arXiv preprint → orange-tinted preprint badge
+ *   - DOI present → subtle link indicator
+ *
+ * Print optimization: break-inside: avoid keeps cards intact when printing.
+ */
+
+/* ── Container setup ──────────────────────────────────────────────────────── */
+
+.pub-card-container {
+  container-type: inline-size;
+  container-name: pubcard;
+}
+
+/* ── Base card styles ─────────────────────────────────────────────────────── */
+
+.pub-card {
+  position: relative;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-off);
+  transition: border-color 0.2s, background-color 0.2s;
+  break-inside: avoid; /* Print: keep card intact */
+}
+
+.pub-card:hover {
+  border-color: var(--color-accent-border);
+  background-color: var(--color-accent-bg);
+}
+
+/* ── CSS :has() conditional indicators ────────────────────────────────────── */
+
+/* PDF available → green left accent border */
+.pub-card:has(.has-pdf) {
+  border-left: 3px solid var(--color-success, #22c55e);
+}
+
+/* arXiv preprint → subtle background tint */
+.pub-card:has(.has-arxiv) .pub-preprint-badge {
+  display: inline-flex;
+}
+
+/* DOI present → show a small link icon indicator */
+.pub-card:has(.has-doi) .pub-card-title a::after {
+  content: "";
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-left: 0.375rem;
+  vertical-align: middle;
+  background: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  opacity: 0.4;
+}
+
+/* ── Card internals ───────────────────────────────────────────────────────── */
+
+.pub-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.pub-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pub-type-badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-accent);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-accent-border);
+  background-color: var(--color-accent-bg);
+  line-height: 1.2;
+}
+
+.pub-year {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+}
+
+.pub-preprint-badge {
+  display: none; /* Shown via :has(.has-arxiv) */
+  align-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #d97706; /* Amber for preprints */
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid #d9770640;
+  background-color: #d9770610;
+  line-height: 1.2;
+}
+
+.pub-status-badge {
+  display: inline-flex;
+  margin-left: 0.5rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6366f1;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid #6366f140;
+  background-color: #6366f110;
+  line-height: 1.2;
+}
+
+.pub-card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.pub-card-title a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.pub-card-title a:hover {
+  color: var(--color-link);
+}
+
+.pub-card-authors {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, var(--color-muted));
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Highlighted author name */
+.pub-card-authors :global(strong) {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.pub-card-venue {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.pub-card-abstract {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+  margin: 0.25rem 0 0;
+}
+
+.pub-card-links {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.pub-link {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  text-decoration: none;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-border);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pub-link:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.pub-link[data-link="pdf"]:hover {
+  color: var(--color-success, #22c55e);
+  border-color: var(--color-success, #22c55e);
+}
+
+/* ── Container Query responsive behavior ──────────────────────────────────── */
+
+/* Compact layout: narrow containers (< 400px, e.g. sidebar) */
+@container pubcard (max-width: 399px) {
+  .pub-card-body {
+    gap: 0.25rem;
+  }
+  .pub-card-title {
+    font-size: 0.8125rem;
+  }
+  .pub-card-authors,
+  .pub-card-venue {
+    font-size: 0.6875rem;
+  }
+  .pub-card-links {
+    display: none; /* Hide links in compact view */
+  }
+  .pub-card-abstract {
+    display: none;
+  }
+}
+
+/* Full layout: wide containers (≥ 600px, e.g. main content) */
+@container pubcard (min-width: 600px) {
+  .pub-card {
+    padding: 1.25rem 1.5rem;
+  }
+  .pub-card-title {
+    font-size: 1rem;
+  }
+}
+
+/* ── Dark mode preprint badge adjustment ──────────────────────────────────── */
+[data-theme="dark"] .pub-preprint-badge {
+  color: #fbbf24;
+  border-color: #fbbf2440;
+  background-color: #fbbf2410;
+}

@@ -1,0 +1,18 @@
+---
+/**
+ * Figure.astro — Figure component.
+ *
+ * Minimal scaffold — will be fully implemented in Sessions 2–5.
+ * Exported here so that all imports resolve at build time.
+ */
+
+interface Props {
+  [key: string]: unknown;
+}
+
+const props = Astro.props;
+---
+
+<div data-component="Figure">
+  <slot />
+</div>

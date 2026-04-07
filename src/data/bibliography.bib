@@ -1,0 +1,174 @@
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% bibliography.bib — Single source of truth for all publications.
+%%
+%% This file is parsed at build time by src/utils/bibtex.ts.
+%% Each entry generates:
+%%   1. A publication card on /publications/
+%%   2. An individual publication page at /publications/[citekey]/
+%%   3. Highwire Press meta tags for Google Scholar indexing
+%%   4. JSON-LD ScholarlyArticle structured data
+%%   5. A BibTeX download/copy button
+%%
+%% Entry types supported: article, inproceedings, book, phdthesis,
+%%   mastersthesis, misc, incollection, techreport
+%%
+%% Custom fields (non-standard BibTeX, parsed by our tooling):
+%%   status    = {published | under-review | preprint | accepted}
+%%   code      = {https://github.com/...}
+%%   slides    = {/files/slides.pdf}
+%%   poster    = {/files/poster.pdf}
+%%   pdf       = {/files/paper.pdf}
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+@article{doe2026ssoct,
+  author    = {Doe, Jane A. and Kim, Seungwan and Vakoc, Benjamin J. and Bouma, Brett E.},
+  title     = {Spectroscopic Intravascular {OCT} for Quantitative Tissue Characterization in Coronary Arteries},
+  journal   = {Biomedical Optics Express},
+  year      = {2026},
+  month     = mar,
+  volume    = {17},
+  number    = {3},
+  pages     = {1245--1263},
+  doi       = {10.1364/BOE.512345},
+  abstract  = {We present a spectroscopic intravascular optical coherence tomography (IV-OCT) system capable of quantitative tissue characterization in coronary arteries. By leveraging wavelength-dependent attenuation coefficients extracted from depth-resolved spectral analysis, our method distinguishes lipid-rich, fibrous, and calcified plaque components with 94\% classification accuracy. The system employs a swept-source laser operating at 1310 nm center wavelength with 100 nm bandwidth, achieving 8 \textmu{}m axial resolution at 200 kHz A-line rate. We validate the approach against histology in 47 ex vivo human coronary artery segments and demonstrate real-time operation in a porcine model.},
+  keywords  = {optical coherence tomography, intravascular imaging, spectroscopy, tissue characterization, coronary artery},
+  issn      = {2156-7085},
+  status    = {published},
+  pdf       = {/files/doe2026ssoct.pdf},
+}
+
+@article{doe2025photoacoustic,
+  author    = {Doe, Jane A. and Chen, Wei and M\"{u}ller, Hans-Peter and de la Cruz, Maria Elena and Bouma, Brett E.},
+  title     = {Near-Infrared {II} Photoacoustic Imaging with Physics-Informed Neural Network Reconstruction},
+  journal   = {Nature Photonics},
+  year      = {2025},
+  month     = oct,
+  volume    = {19},
+  number    = {10},
+  pages     = {734--742},
+  doi       = {10.1038/s41566-025-01234-5},
+  abstract  = {We demonstrate a NIR-II photoacoustic imaging system operating in the 1000--1700 nm window with a physics-informed neural network (PINN) for image reconstruction. The PINN incorporates the photoacoustic wave equation as a regularization constraint, enabling robust image formation from sparse transducer arrays with 16$\times$ fewer elements than conventional systems. We achieve 85 \textmu{}m lateral resolution at 3 cm imaging depth in tissue-mimicking phantoms and resolve subsurface vasculature in vivo in a murine tumor model. The approach reduces acquisition time by an order of magnitude while maintaining image quality comparable to fully-sampled reconstruction.},
+  keywords  = {photoacoustic imaging, NIR-II, physics-informed neural networks, deep learning, image reconstruction},
+  issn      = {1749-4885},
+  status    = {published},
+  code      = {https://github.com/your-handle/nir2-pinn-pa},
+}
+
+@inproceedings{doe2025cleo,
+  author    = {Doe, Jane A. and Kim, Seungwan and Vakoc, Benjamin J.},
+  title     = {Real-Time Confocal Gate Optimization for Intravascular {OCT} Catheters Using Adaptive Optics},
+  booktitle = {Conference on Lasers and Electro-Optics (CLEO)},
+  year      = {2025},
+  month     = may,
+  pages     = {ATh4B.3},
+  doi       = {10.1364/CLEO_AT.2025.ATh4B.3},
+  abstract  = {We present an adaptive confocal gate optimization technique for intravascular OCT catheters that compensates for catheter sheath aberrations in real time. The method uses a deformable mirror conjugated to the catheter tip to dynamically adjust the confocal gate, improving lateral resolution by 40\% and signal-to-noise ratio by 6 dB compared to fixed-optics designs.},
+  keywords  = {adaptive optics, optical coherence tomography, catheter design},
+  status    = {published},
+  slides    = {/files/doe2025cleo-slides.pdf},
+}
+
+@article{doe2025inverse,
+  author    = {Doe, Jane A. and Bouma, Brett E.},
+  title     = {Inverse Algorithms for Depth-Resolved Spectroscopic {OCT}: A Comparative Study},
+  journal   = {Optics Express},
+  year      = {2025},
+  month     = jul,
+  volume    = {33},
+  number    = {14},
+  pages     = {19234--19251},
+  doi       = {10.1364/OE.498765},
+  abstract  = {We present a systematic comparison of inverse algorithms for extracting depth-resolved spectroscopic information from optical coherence tomography data. Six methods are evaluated---short-time Fourier transform, continuous wavelet transform, dual-window technique, maximum likelihood estimation, compressed sensing, and a novel physics-constrained neural network---on both simulated and experimental datasets. The physics-constrained neural network achieves superior spectral fidelity (RMSE < 0.02) while maintaining computational efficiency suitable for real-time processing.},
+  keywords  = {inverse problems, spectroscopy, optical coherence tomography, neural networks},
+  issn      = {1094-4087},
+  status    = {published},
+}
+
+@misc{doe2025polarization,
+  author    = {Doe, Jane A. and van der Berg, Lars and Bouma, Brett E.},
+  title     = {Polarization-Sensitive Swept-Source {OCT} via {Jones} Matrix Formalism: Theory and Simulation},
+  year      = {2025},
+  month     = sep,
+  eprint    = {2509.08421},
+  archiveprefix = {arXiv},
+  primaryclass  = {physics.optics},
+  abstract  = {We derive a complete Jones matrix model for polarization-sensitive swept-source optical coherence tomography (PS-SS-OCT) systems incorporating fiber birefringence, catheter rotation, and sample retardation. The model enables end-to-end simulation of PS-OCT signal formation from arbitrary tissue birefringence distributions. We validate against experimental measurements in birefringent phantoms and demonstrate the model's utility for system design optimization. Open-source simulation code is provided.},
+  keywords  = {polarization, OCT, Jones calculus, simulation},
+  status    = {preprint},
+  code      = {https://github.com/your-handle/ps-oct-sim},
+}
+
+@phdthesis{doe2024thesis,
+  author    = {Doe, Jane A.},
+  title     = {Computational Methods for Spectroscopic Optical Coherence Tomography},
+  school    = {Example University},
+  year      = {2024},
+  month     = may,
+  abstract  = {This thesis develops computational methods for extracting quantitative spectroscopic information from optical coherence tomography data. Three primary contributions are presented: (1) a physics-constrained neural network for depth-resolved spectral estimation, (2) a Jones matrix simulation framework for polarization-sensitive OCT system design, and (3) a spectroscopic intravascular OCT system for coronary artery tissue characterization. Each contribution is validated against established methods and experimental data.},
+  keywords  = {optical coherence tomography, spectroscopy, computational physics, inverse problems},
+  status    = {published},
+  pdf       = {/files/doe2024thesis.pdf},
+}
+
+@book{chen2025biophotonics,
+  author    = {Chen, Wei and Doe, Jane A. and Popescu, Gabriel},
+  title     = {Computational Biophotonics: From Principles to Practice},
+  publisher = {Cambridge University Press},
+  year      = {2025},
+  isbn      = {978-1-108-83456-7},
+  abstract  = {This textbook covers the mathematical and computational foundations of modern biophotonics, from electromagnetic wave propagation in biological tissue to machine learning approaches for image reconstruction. Topics include Monte Carlo photon transport, diffusion theory, inverse scattering, optical coherence tomography, photoacoustic imaging, and deep learning for computational microscopy.},
+  keywords  = {biophotonics, computational imaging, textbook},
+  status    = {published},
+}
+
+@incollection{doe2025chapter,
+  author    = {Doe, Jane A. and Vakoc, Benjamin J.},
+  title     = {Intravascular {OCT}: Current State and Future Directions},
+  booktitle = {Handbook of Biomedical Optics},
+  publisher = {Springer},
+  year      = {2025},
+  pages     = {423--467},
+  doi       = {10.1007/978-3-031-12345-6_15},
+  abstract  = {This chapter reviews the current state of intravascular optical coherence tomography (IV-OCT) technology, including swept-source system architectures, catheter design principles, and clinical applications in interventional cardiology. We discuss emerging capabilities including spectroscopic analysis, polarization-sensitive imaging, and integration with other intravascular modalities. Future directions in miniaturization, multimodal catheters, and artificial intelligence-assisted interpretation are examined.},
+  keywords  = {intravascular OCT, review, cardiology},
+  status    = {published},
+}
+
+@techreport{doe2025comsol,
+  author    = {Doe, Jane A.},
+  title     = {{COMSOL} Multiphysics Modeling of Light Propagation in Arterial Tissue},
+  institution = {Example Research Lab},
+  year      = {2025},
+  month     = feb,
+  abstract  = {This technical report documents the COMSOL Multiphysics simulation framework developed for modeling light propagation in multilayer arterial tissue structures. The model incorporates wavelength-dependent optical properties (absorption, scattering, anisotropy) for intimal, medial, and adventitial layers, and validates against Monte Carlo photon transport simulations and experimental reflectance measurements.},
+  keywords  = {COMSOL, simulation, light propagation, arterial tissue},
+  status    = {published},
+}
+
+@article{kim2024multimodal,
+  author    = {Kim, Seungwan and Doe, Jane A. and Park, Jinhee and {National Institutes of Health Intravascular Imaging Consortium} and Vakoc, Benjamin J. and Bouma, Brett E. and Tearney, Guillermo J. and Yun, Seok-Hyun and Oh, Wang-Yuhl},
+  title     = {Multimodal Intravascular Imaging Combining {OCT} and {NIRF} for Coronary Plaque Assessment},
+  journal   = {Science Translational Medicine},
+  year      = {2024},
+  month     = nov,
+  volume    = {16},
+  number    = {772},
+  pages     = {eadn1234},
+  doi       = {10.1126/scitranslmed.adn1234},
+  abstract  = {We demonstrate a dual-modality intravascular catheter combining optical coherence tomography with near-infrared fluorescence imaging for comprehensive coronary plaque characterization. The 2.6 Fr catheter achieves simultaneous structural and molecular imaging at 100 frames per second pullback speed. In a first-in-human study of 23 patients undergoing percutaneous coronary intervention, the dual-modality system identified high-risk thin-cap fibroatheromas with 96\% sensitivity and 91\% specificity compared to virtual histology IVUS as a reference standard.},
+  keywords  = {multimodal imaging, OCT, fluorescence, coronary artery, clinical trial},
+  issn      = {1946-6234},
+  status    = {published},
+}
+
+@mastersthesis{doe2023bell,
+  author    = {Doe, Jane A.},
+  title     = {Violation of {Bell} Inequalities with Entangled Photon Pairs: Experimental Implementation and Analysis},
+  school    = {Example University},
+  year      = {2023},
+  month     = dec,
+  abstract  = {This thesis presents an experimental implementation of Bell inequality tests using polarization-entangled photon pairs generated via spontaneous parametric down-conversion. We achieve a CHSH inequality violation of S = 2.73 \pm 0.04, exceeding the classical bound of 2 by 18 standard deviations. The apparatus uses a type-II BBO crystal, single-photon avalanche detectors, and a coincidence counting system with 3 ns timing window. We discuss systematic error sources and their mitigation.},
+  keywords  = {quantum optics, Bell inequality, entanglement, SPDC},
+  status    = {published},
+  pdf       = {/files/doe2023bell.pdf},
+}

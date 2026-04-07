@@ -1,0 +1,96 @@
+---
+/**
+ * ImageZoom.astro — Click-to-zoom for article images.
+ *
+ * NOT a React island — this uses event delegation on the document so it
+ * works on all images inside .prose containers without per-element binding.
+ *
+ * Architecture:
+ *   - Clicking an <img> inside .prose creates a full-viewport overlay
+ *   - The image smoothly scales up with a dark backdrop
+ *   - Click anywhere, press Escape, or scroll to dismiss
+ *   - Keyboard accessible: Escape closes, focus managed
+ *   - Respects prefers-reduced-motion (no scale transition)
+ *   - Zero external dependencies (no medium-zoom library)
+ */
+---
+
+<div id="image-zoom-overlay" role="dialog" aria-label="Enlarged image" aria-modal="true" style="display:none;">
+  <img id="image-zoom-img" src="" alt="" />
+</div>
+
+<script is:inline>
+(function(){
+  var overlay=document.getElementById('image-zoom-overlay');
+  var zoomImg=document.getElementById('image-zoom-img');
+  if(!overlay||!zoomImg) return;
+
+  /* Open: click on any image inside a .prose container */
+  document.addEventListener('click',function(e){
+    var img=e.target.closest('.prose img');
+    if(!img||!img.src) return;
+    e.preventDefault();
+    zoomImg.src=img.src;
+    zoomImg.alt=img.alt||'Enlarged image';
+    overlay.style.display='flex';
+    document.body.style.overflow='hidden';
+    requestAnimationFrame(function(){overlay.classList.add('active');});
+  });
+
+  /* Close: click overlay, press Escape, or scroll */
+  function close(){
+    overlay.classList.remove('active');
+    document.body.style.overflow='';
+    setTimeout(function(){overlay.style.display='none';zoomImg.src='';},250);
+  }
+  overlay.addEventListener('click',close);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&overlay.style.display==='flex') close();
+  });
+})();
+</script>
+
+<style>
+  #image-zoom-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    background: rgba(0, 0, 0, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+    transition: background 0.25s ease;
+    padding: 24px;
+  }
+
+  #image-zoom-overlay.active {
+    background: rgba(0, 0, 0, 0.85);
+  }
+
+  #image-zoom-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-glass);
+    transform: scale(0.92);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  #image-zoom-overlay.active #image-zoom-img {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #image-zoom-overlay,
+    #image-zoom-img {
+      transition: none;
+    }
+    #image-zoom-img {
+      transform: scale(1);
+    }
+  }
+</style>

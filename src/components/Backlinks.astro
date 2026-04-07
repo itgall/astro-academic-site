@@ -1,0 +1,52 @@
+---
+/**
+ * Backlinks.astro — Backlinks section component.
+ *
+ * Displays pages that link to the current page. Will be fully wired
+ * in Session 5 (Novel Features) with build-time backlink resolution.
+ *
+ * Currently renders a placeholder section that is hidden when no
+ * backlinks are provided.
+ */
+
+interface BacklinkEntry {
+  title: string;
+  url: string;
+  /** Optional context snippet showing the linking text */
+  context?: string;
+}
+
+interface Props {
+  /** Array of pages that link to the current page */
+  backlinks?: BacklinkEntry[];
+  /** Section heading (default: "Linked from") */
+  heading?: string;
+}
+
+const { backlinks = [], heading = "Linked from" } = Astro.props;
+---
+
+{backlinks.length > 0 && (
+  <section class="mt-12 border-t border-[var(--color-border)] pt-8" data-pagefind-ignore>
+    <h2 class="mb-4 font-mono text-[11px] font-medium tracking-wider text-[var(--color-muted)] uppercase">
+      {heading}
+    </h2>
+    <ul class="space-y-2">
+      {backlinks.map((link) => (
+        <li>
+          <a
+            href={link.url}
+            class="text-sm text-[var(--color-link)] no-underline hover:text-[var(--color-link-hover)] transition-colors"
+          >
+            {link.title}
+          </a>
+          {link.context && (
+            <p class="mt-0.5 text-xs text-[var(--color-muted)] italic">
+              {link.context}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

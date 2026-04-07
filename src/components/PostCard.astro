@@ -1,0 +1,77 @@
+---
+/**
+ * PostCard.astro — Blog post card component.
+ *
+ * Displays a compact card for blog listing pages with:
+ *   - Title (linked to post)
+ *   - Date and reading time
+ *   - Category badge
+ *   - Description snippet
+ *   - Tag chips (linked to tag pages)
+ *
+ * Follows the card pattern from Session 2 design system:
+ *   rounded border, bg-off, hover accent border.
+ */
+import type { CollectionEntry } from "astro:content";
+import { formatDate } from "@utils/dates";
+import { calculateReadingTime } from "@utils/readingTime";
+
+interface Props {
+  post: CollectionEntry<"posts">;
+}
+
+const { post } = Astro.props;
+const { title, date, category, description, readingTime } = post.data;
+const tags: string[] = post.data.tags;
+
+const displayReadingTime = readingTime ?? calculateReadingTime(post.body ?? "");
+
+const categoryLabels: Record<string, string> = {
+  technical: "Technical Note",
+  thesis: "Thesis",
+  essay: "Essay",
+  dispatch: "Dispatch",
+  "build-log": "Build Log",
+};
+---
+
+<article
+  class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-5 py-4 transition-colors hover:border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+
+>
+  <a href={`/blog/${post.id}/`} class="block no-underline">
+    <div class="flex items-baseline justify-between gap-4">
+      <h3 class="text-sm font-medium text-[var(--color-text)]">{title}</h3>
+      <span class="shrink-0 font-mono text-[11px] text-[var(--color-muted)]">
+        {formatDate(date)}
+      </span>
+    </div>
+
+    <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted)]">
+      <span class="rounded-sm bg-[var(--color-accent-bg)] px-1.5 py-0.5 text-[var(--color-accent)]">
+        {categoryLabels[category] ?? category}
+      </span>
+      <span class="text-[var(--color-border)]">·</span>
+      <span>{displayReadingTime}</span>
+    </div>
+
+    {description && (
+      <p class="mt-2 text-xs leading-relaxed text-[var(--color-muted)] line-clamp-2">
+        {description}
+      </p>
+    )}
+  </a>
+
+  {tags.length > 0 && (
+    <div class="mt-2.5 flex flex-wrap gap-1.5">
+      {tags.map((tag) => (
+        <a
+          href={`/blog/tags/${tag}/`}
+          class="rounded-full border border-[var(--color-border)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-muted)] no-underline hover:border-[var(--color-accent-border)] hover:text-[var(--color-accent)] transition-colors"
+        >
+          {tag}
+        </a>
+      ))}
+    </div>
+  )}
+</article>

@@ -1,0 +1,11 @@
+# robots.txt — Academic site template
+#
+# CRITICAL: Do NOT block Googlebot-Scholar.
+# Google Scholar uses its own crawler to index academic publications.
+# Blocking it prevents publications from appearing in Scholar search results.
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://your-domain.com/sitemap-index.xml

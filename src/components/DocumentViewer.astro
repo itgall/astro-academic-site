@@ -1,0 +1,177 @@
+---
+/**
+ * DocumentViewer.astro — Inline document preview overlay.
+ *
+ * NOT a React island — uses event delegation for zero-JS-overhead triggering.
+ *
+ * Usage: Add data-doc-viewer to any link pointing to a PDF or document:
+ *   <a href="/files/cv.pdf" data-doc-viewer data-doc-title="Academic CV">View CV</a>
+ *
+ * When clicked, the link opens in a full-screen iframe overlay instead of
+ * navigating away. The overlay shows a title bar, download button, and
+ * close button. Escape key or clicking the backdrop dismisses it.
+ *
+ * This provides a polished in-site document viewing experience without
+ * requiring visitors to leave the page or use a separate PDF reader.
+ */
+---
+
+<div id="doc-viewer" class="doc-viewer-overlay" aria-hidden="true">
+  <div class="doc-viewer-chrome">
+    <div class="doc-viewer-header">
+      <span id="doc-viewer-title" class="doc-viewer-title">Document</span>
+      <div class="doc-viewer-actions">
+        <a id="doc-viewer-download" href="#" target="_blank" rel="noopener" class="doc-viewer-btn" aria-label="Download document">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download
+        </a>
+        <button type="button" class="doc-viewer-btn doc-viewer-close" aria-label="Close document viewer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          Close
+        </button>
+      </div>
+    </div>
+    <iframe id="doc-viewer-frame" class="doc-viewer-frame" src="about:blank" title="Document preview"></iframe>
+  </div>
+</div>
+
+<script is:inline>
+(function(){
+  var overlay=document.getElementById('doc-viewer');
+  var frame=document.getElementById('doc-viewer-frame');
+  var titleEl=document.getElementById('doc-viewer-title');
+  var dlLink=document.getElementById('doc-viewer-download');
+  if(!overlay||!frame||!titleEl||!dlLink) return;
+
+  function open(href,title){
+    frame.src=href;
+    titleEl.textContent=title||href.split('/').pop();
+    dlLink.href=href;
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+  }
+
+  function close(){
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+    setTimeout(function(){frame.src='about:blank';},300);
+  }
+
+  /* Trigger: any element with data-doc-viewer */
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-doc-viewer]');
+    if(!el) return;
+    e.preventDefault();
+    open(el.getAttribute('href'),el.dataset.docTitle||el.textContent.trim());
+  });
+
+  /* Close: button, backdrop, Escape */
+  overlay.querySelector('.doc-viewer-close').addEventListener('click',close);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&overlay.classList.contains('open'))close();
+  });
+})();
+</script>
+
+<style>
+  .doc-viewer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99992;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    padding: 24px;
+  }
+
+  .doc-viewer-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .doc-viewer-chrome {
+    width: min(900px, 100%);
+    height: min(85vh, 100%);
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-glass);
+    transform: scale(0.96);
+    transition: transform 0.25s ease;
+  }
+
+  .doc-viewer-overlay.open .doc-viewer-chrome {
+    transform: scale(1);
+  }
+
+  .doc-viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .doc-viewer-title {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-viewer-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .doc-viewer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .doc-viewer-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent-border);
+  }
+
+  .doc-viewer-frame {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: var(--color-bg);
+  }
+</style>

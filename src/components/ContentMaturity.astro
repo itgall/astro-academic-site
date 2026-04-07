@@ -1,0 +1,31 @@
+---
+/**
+ * ContentMaturity.astro — Visual maturity badge for digital garden notes.
+ *
+ * Renders emoji + label with color-coded styling based on maturity level.
+ * Includes data-pagefind-filter attribute for search faceting.
+ *
+ * Maturity levels:
+ *   🌱 Seedling  — Early idea, may be incomplete
+ *   🌿 Budding   — Work in progress, main ideas forming
+ *   🌳 Evergreen — Mature, well-developed, regularly maintained
+ */
+import { getMaturityConfig, type MaturityLevel } from "@utils/contentMaturity";
+
+interface Props {
+  status: MaturityLevel;
+}
+
+const { status } = Astro.props;
+const config = getMaturityConfig(status);
+---
+
+<span
+  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+  class:list={[config.textColor, config.bgColor, config.borderColor]}
+  title={config.description}
+  data-pagefind-filter={`maturity:${status}`}
+>
+  <span aria-hidden="true">{config.emoji}</span>
+  <span>{config.label}</span>
+</span>

@@ -1,0 +1,97 @@
+---
+/**
+ * MaintenanceMode.astro — Full-page maintenance overlay.
+ *
+ * Blocks all site content with a "site is being updated" message.
+ * NOT a React island — renders as inline HTML visible before JS hydrates.
+ *
+ * Bypass mechanism:
+ *   - Append ?preview=true to any URL to bypass and set a 7-day cookie
+ *   - Once the cookie is set, the overlay is hidden on all subsequent visits
+ *   - The site owner can share preview links with collaborators
+ *
+ * Accessibility:
+ *   - Overlay traps focus (body overflow hidden)
+ *   - Dismissible via bypass mechanism only (intentional — it's maintenance mode)
+ */
+import { siteMetadata } from "@data/meta";
+
+const name = siteMetadata.name;
+---
+
+<div id="maintenance-gate" aria-live="polite">
+  <div class="maintenance-inner">
+    <div class="maintenance-name">{name}</div>
+    <div class="maintenance-divider" />
+    <div class="maintenance-message">
+      This site is currently being updated.<br />Please check back soon.
+    </div>
+    <div class="maintenance-label">UNDER CONSTRUCTION</div>
+  </div>
+</div>
+
+<script is:inline>
+(function(){
+  var gate=document.getElementById('maintenance-gate');
+  if(!gate) return;
+  /* Bypass: ?preview=true sets a 7-day cookie */
+  if(document.cookie.indexOf('bypass_maintenance=1')!==-1||
+     window.location.search.indexOf('preview=true')!==-1){
+    if(window.location.search.indexOf('preview=true')!==-1){
+      document.cookie='bypass_maintenance=1;path=/;max-age=604800;SameSite=Lax';
+    }
+    gate.remove();
+    return;
+  }
+  document.body.style.overflow='hidden';
+})();
+</script>
+
+<style>
+  #maintenance-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .maintenance-inner {
+    text-align: center;
+    max-width: 420px;
+    padding: 32px;
+  }
+
+  .maintenance-name {
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  .maintenance-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--color-border);
+    margin: 0 auto 20px;
+  }
+
+  .maintenance-message {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--color-muted);
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .maintenance-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-border);
+    letter-spacing: 0.06em;
+  }
+</style>

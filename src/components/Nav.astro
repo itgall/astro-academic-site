@@ -1,0 +1,266 @@
+---
+/**
+ * Nav.astro — Primary navigation bar.
+ *
+ * Design: sticky frosted-glass nav extracted from the existing site.
+ * Responsive with CSS-only mobile disclosure via <details>/<summary>.
+ *
+ * Accessibility:
+ *   - <nav aria-label="Main navigation">
+ *   - aria-current="page" on active link
+ *   - All interactive targets ≥ 24×24px (WCAG 2.5.8)
+ *   - Mobile menu functions without JavaScript
+ *   - view-transition-name on site title for cross-page morphing
+ *   - Priority-plus pattern hides overflow items into a "More" dropdown
+ */
+import { primaryNav } from "@data/navigation";
+import { siteMetadata } from "@data/meta";
+import { features, sections } from "@data/settings";
+
+interface Props {
+  activeNav?: string;
+}
+
+const { activeNav } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+/**
+ * Section-to-path mapping for filtering nav items based on settings.
+ * If a section is disabled in settings.json, its nav item is hidden.
+ */
+const sectionPaths: Record<string, keyof typeof sections> = {
+  "/publications/": "publications",
+  "/projects/": "projects",
+  "/blog/": "blog",
+  "/notes/": "notes",
+  "/teaching/": "teaching",
+  "/cv/": "cv",
+  "/about/": "about",
+  "/contact/": "contact",
+};
+
+/** Filter nav items: hide items whose section is disabled, and
+ *  hide Graph/Search if their features are disabled. */
+const filteredNav = primaryNav.filter((item) => {
+  const section = sectionPaths[item.href];
+  if (section && !sections[section]) return false;
+  if (item.href === "/graph/" && !features.researchGraph) return false;
+  if (item.href === "/search/" && !features.searchPage) return false;
+  return true;
+});
+
+/**
+ * Determine if a nav item is active by matching the current URL path.
+ * Uses activeMatch regex if provided, otherwise startsWith for prefix matching.
+ * Special case: exact match for "/" to avoid highlighting "Home" on every page.
+ */
+function isActive(item: (typeof primaryNav)[number]): boolean {
+  if (item.activeMatch) {
+    return new RegExp(item.activeMatch).test(currentPath);
+  }
+  if (item.href === "/") {
+    return currentPath === "/";
+  }
+  return currentPath.startsWith(item.href);
+}
+---
+
+<nav
+  class="vt-nav sticky top-0 z-50 glass border-b border-[var(--color-border)] transition-[border-color] duration-200"
+  aria-label="Main navigation"
+  data-pagefind-ignore
+>
+  <div class="wide-container flex h-14 items-center">
+    {/* Site name — view-transition-name for cross-page animation */}
+    <a
+      href="/"
+      class="vt-site-title shrink-0 text-sm font-semibold tracking-tight text-[var(--color-text)] hover:text-[var(--color-text)] no-underline"
+    >
+      {siteMetadata.name}
+    </a>
+
+    {/* Desktop nav links — priority-plus pattern hides overflow into a "More" dropdown */}
+    <ul id="desktop-nav" class="ml-auto hidden items-center gap-1 md:flex" role="list">
+      {filteredNav.map((item) => (
+        <li class="nav-item">
+          <a
+            href={item.href}
+            class:list={[
+              "inline-flex items-center px-2.5 py-1.5 text-[13px] rounded-md transition-colors duration-150 no-underline",
+              isActive(item)
+                ? "text-[var(--color-text)] font-medium bg-[var(--color-accent-bg)]"
+                : "text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-raised)]",
+            ]}
+            aria-current={isActive(item) ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        </li>
+      ))}
+      {/* "More" dropdown — hidden when all items fit */}
+      <li id="nav-more" class="relative" style="display:none;">
+        <button
+          type="button"
+          class="inline-flex items-center px-2.5 py-1.5 text-[13px] rounded-md text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] transition-colors duration-150"
+          aria-expanded="false"
+          aria-haspopup="true"
+          id="nav-more-btn"
+        >
+          More
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <ul
+          id="nav-more-menu"
+          role="menu"
+          class="absolute right-0 top-full mt-1 min-w-[160px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg"
+          style="display:none;"
+        >
+          {/* Overflow items are cloned here by the priority-plus script */}
+        </ul>
+      </li>
+    </ul>
+
+    {/* Mobile: hamburger menu */}
+    <div class="ml-auto flex items-center gap-2 md:hidden">
+
+      {/*
+       * CSS-only mobile menu using <details>/<summary>.
+       * Functions without JavaScript — the browser handles toggle natively.
+       * The summary acts as the hamburger button.
+       */}
+      <details class="mobile-nav relative">
+        <summary
+          class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)] list-none [&::-webkit-details-marker]:hidden"
+          aria-label="Toggle navigation menu"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </summary>
+
+        {/* Mobile menu overlay */}
+        <div
+          class="fixed inset-x-0 top-14 bottom-0 z-50 glass border-t border-[var(--color-border)] p-6 overflow-y-auto"
+          role="menu"
+        >
+          <ul class="flex flex-col gap-0.5" role="list">
+            {filteredNav.map((item) => (
+              <li role="none">
+                <a
+                  href={item.href}
+                  role="menuitem"
+                  class:list={[
+                    "flex items-center rounded-md px-3 py-3 text-base font-medium transition-colors no-underline",
+                    isActive(item)
+                      ? "text-[var(--color-accent)] bg-[var(--color-accent-bg)]"
+                      : "text-[var(--color-text)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-bg)]",
+                  ]}
+                  aria-current={isActive(item) ? "page" : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </details>
+    </div>
+  </div>
+</nav>
+
+{/*
+ * Close mobile menu on navigation (View Transitions).
+ * Without this, the <details> stays open after clicking a link.
+ * Idempotency guard prevents listener stacking across body swaps.
+ */}
+<script is:inline>
+  if(!window._mobileMenuCloseInit){
+    window._mobileMenuCloseInit=true;
+    document.addEventListener("astro:before-preparation", function () {
+      var d = document.querySelector("details.mobile-nav");
+      if (d) d.removeAttribute("open");
+    });
+  }
+</script>
+
+{/* Priority-plus navigation — measures space and hides overflow into "More" dropdown.
+ * Idempotency guard prevents listener stacking across View Transition body swaps. */}
+<script is:inline>
+(function(){
+  if(window._priorityPlusInit) return;
+  window._priorityPlusInit=true;
+
+  function initPriorityPlus(){
+    var nav=document.getElementById('desktop-nav');
+    var more=document.getElementById('nav-more');
+    var moreBtn=document.getElementById('nav-more-btn');
+    var moreMenu=document.getElementById('nav-more-menu');
+    if(!nav||!more||!moreBtn||!moreMenu) return;
+
+    var items=Array.from(nav.querySelectorAll('.nav-item'));
+    if(!items.length) return;
+
+    function update(){
+      items.forEach(function(li){li.style.display='';});
+      more.style.display='none';
+      moreMenu.innerHTML='';
+      if(nav.scrollWidth<=nav.clientWidth) return;
+      more.style.display='';
+      var hidden=[];
+      for(var i=items.length-1;i>=0;i--){
+        items[i].style.display='none';
+        hidden.unshift(items[i]);
+        if(nav.scrollWidth<=nav.clientWidth) break;
+      }
+      if(!hidden.length){more.style.display='none';return;}
+      hidden.forEach(function(li){
+        var a=li.querySelector('a');
+        if(!a) return;
+        var mi=document.createElement('li');
+        mi.setAttribute('role','menuitem');
+        var link=document.createElement('a');
+        link.href=a.href;
+        link.textContent=a.textContent;
+        link.className='block px-3 py-2 text-[13px] text-[var(--color-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-bg)] transition-colors no-underline';
+        if(a.getAttribute('aria-current')==='page'){
+          link.className+=' text-[var(--color-accent)] font-medium';
+        }
+        mi.appendChild(link);
+        moreMenu.appendChild(mi);
+      });
+    }
+
+    update();
+    var t;
+    window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(update,80);});
+
+    moreBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var open=moreMenu.style.display==='none';
+      moreMenu.style.display=open?'':'none';
+      moreBtn.setAttribute('aria-expanded',open?'true':'false');
+    });
+    document.addEventListener('click',function(){
+      moreMenu.style.display='none';
+      moreBtn.setAttribute('aria-expanded','false');
+    });
+  }
+
+  initPriorityPlus();
+  /* Re-run on View Transition navigations since DOM elements change */
+  document.addEventListener('astro:page-load', initPriorityPlus);
+})();
+</script>

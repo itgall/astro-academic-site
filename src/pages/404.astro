@@ -1,0 +1,47 @@
+---
+/**
+ * 404.astro — Not found page.
+ *
+ * On-brand design with terminal-style aesthetic. Provides links to
+ * both the search page and homepage for recovery.
+ *
+ * Renders at /404.html for static host compatibility (Cloudflare Pages,
+ * Netlify, etc. automatically serve this for missing routes).
+ */
+import BaseLayout from "@layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Page Not Found">
+  <div class="prose-container flex min-h-[55vh] flex-col items-center justify-center text-center">
+    {/* Terminal-style error code */}
+    <span class="font-mono text-[11px] tracking-widest text-[var(--color-accent)] mb-4">
+      &gt;_ ERROR
+    </span>
+
+    <h1 class="text-6xl font-semibold tracking-tight text-[var(--color-text)]">
+      404
+    </h1>
+
+    <p class="mt-4 max-w-sm text-base text-[var(--color-muted)] leading-relaxed">
+      This page doesn't exist — it may have been moved or removed.
+    </p>
+
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+      <a
+        href="/"
+        class="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)] hover:text-[#0e1117] no-underline"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+        </svg>
+        Return home
+      </a>
+      <a
+        href="/search/"
+        class="text-sm font-medium text-[var(--color-link)] hover:text-[var(--color-link-hover)] transition-colors no-underline"
+      >
+        Search the site
+      </a>
+    </div>
+  </div>
+</BaseLayout>

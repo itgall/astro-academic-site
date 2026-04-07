@@ -1,0 +1,38 @@
+{
+  "features": {
+    "maintenanceMode": false,
+    "defaultAccent": "mint",
+    "sidenotes": true,
+    "backlinks": true,
+    "tableOfContents": true,
+    "linkPreviews": true,
+    "searchPage": true,
+    "researchGraph": true,
+    "contentMaturityBadges": true,
+    "copyCodeButton": true,
+    "imageZoom": true,
+    "documentViewer": true,
+    "readingProgressBar": true,
+    "commandPalette": true,
+    "visualEffects": true,
+    "chatWidget": false,
+    "documentRequestModal": true
+  },
+  "sections": {
+    "publications": true,
+    "projects": true,
+    "blog": true,
+    "notes": true,
+    "teaching": true,
+    "cv": true,
+    "about": true,
+    "contact": true
+  },
+  "appearance": {
+    "defaultTheme": "dark",
+    "loadingAnimation": "terminal",
+    "viewTransitions": true,
+    "scrollReveal": false,
+    "customCursor": false
+  }
+}

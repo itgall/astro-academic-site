@@ -1,0 +1,137 @@
+---
+/**
+ * SEO.astro — Centralized JSON-LD structured data component.
+ *
+ * Generates the appropriate schema.org JSON-LD based on page type.
+ * Included via named slot="head" in page routes.
+ *
+ * Page type → schema mapping:
+ *   - 'home'        → Person + WebSite (handled by Head.astro)
+ *   - 'publication'  → ScholarlyArticle (handled by PublicationLayout.astro)
+ *   - 'post'        → BlogPosting
+ *   - 'project'     → CreativeWork (ResearchProject)
+ *   - 'teaching'    → Course (handled by teaching/[...slug].astro)
+ *   - 'note'        → Article with learningResourceType
+ *   - 'cv'          → Person with hasOccupation (handled by cv.astro)
+ *   - 'search'      → WebSite + SearchAction (handled by search.astro)
+ *
+ * This component primarily handles post, project, and note schemas that
+ * aren't yet covered by dedicated page-level JSON-LD blocks.
+ */
+import { siteMetadata } from "@data/meta";
+
+interface Props {
+  pageType: "post" | "project" | "note";
+  title: string;
+  description?: string;
+  url: string;
+  /** ISO date string for datePublished */
+  datePublished?: string;
+  /** ISO date string for dateModified */
+  dateModified?: string;
+  /** Tags/keywords */
+  tags?: string[];
+  /** Content category (post only) */
+  category?: string;
+  /** Institution (project only) */
+  institution?: string;
+  /** Note maturity level */
+  maturity?: string;
+}
+
+const {
+  pageType,
+  title,
+  description = "",
+  url,
+  datePublished,
+  dateModified,
+  tags = [],
+  category,
+  institution,
+  maturity,
+} = Astro.props;
+
+const canonicalUrl = new URL(url, siteMetadata.siteUrl).href;
+
+const authorRef = {
+  "@type": "Person" as const,
+  "@id": `${siteMetadata.siteUrl}/#person`,
+  name: siteMetadata.name,
+};
+
+/** Build the JSON-LD object based on page type */
+function buildSchema(): Record<string, unknown> {
+  switch (pageType) {
+    case "post":
+      return {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: title,
+        description,
+        author: authorRef,
+        datePublished: datePublished ?? undefined,
+        dateModified: dateModified ?? datePublished ?? undefined,
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": canonicalUrl,
+        },
+        url: canonicalUrl,
+        ...(tags.length > 0 && { keywords: tags.join(", ") }),
+        ...(category && { articleSection: category }),
+        publisher: {
+          "@type": "Person",
+          name: siteMetadata.name,
+          url: siteMetadata.siteUrl,
+        },
+      };
+
+    case "project":
+      return {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        name: title,
+        description,
+        author: authorRef,
+        url: canonicalUrl,
+        ...(datePublished && { dateCreated: datePublished }),
+        ...(institution && {
+          sourceOrganization: {
+            "@type": "Organization",
+            name: institution,
+          },
+        }),
+        ...(tags.length > 0 && { keywords: tags.join(", ") }),
+      };
+
+    case "note":
+      return {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: title,
+        description,
+        author: authorRef,
+        url: canonicalUrl,
+        learningResourceType: "research note",
+        ...(datePublished && { datePublished }),
+        ...(dateModified && { dateModified }),
+        ...(maturity && {
+          creativeWorkStatus: maturity,
+        }),
+        ...(tags.length > 0 && { keywords: tags.join(", ") }),
+      };
+
+    default:
+      return {};
+  }
+}
+
+const schema = buildSchema();
+---
+
+{Object.keys(schema).length > 0 && (
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(schema)}
+  />
+)}

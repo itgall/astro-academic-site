@@ -1,0 +1,213 @@
+---
+/**
+ * PublicationLayout.astro — Individual Publication Detail Page.
+ *
+ * Satisfies Google Scholar's inclusion guidelines:
+ *   1. Large title at top (Scholar requirement)
+ *   2. Author list on separate line below title (Scholar requirement)
+ *   3. Abstract visible on the page (Scholar requirement)
+ *   4. Highwire Press meta tags in <head> via ScholarMeta
+ *   5. JSON-LD ScholarlyArticle structured data
+ *
+ * Site owner's name is visually highlighted (bold + accent color)
+ * via formatAuthors with highlightName parameter.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import ScholarMeta from "@components/ScholarMeta.astro";
+import CitationActions from "@components/CitationActions.astro";
+import Backlinks from "@components/Backlinks.astro";
+import type { Publication } from "@utils/bibtex";
+import { formatAuthors, pubTypeLabel } from "@utils/bibtex";
+import { siteMetadata } from "@data/meta";
+import { getBacklinksForUrl } from "@utils/backlinks";
+import { features } from "@data/settings";
+
+interface Props {
+  pub: Publication;
+}
+
+const { pub } = Astro.props;
+
+/** Compute backlinks for this publication at build time */
+const pageUrl = `/publications/${pub.slug}/`;
+const backlinks = features.backlinks ? await getBacklinksForUrl(pageUrl) : [];
+
+/** Author HTML with site owner highlighted in <strong> tags */
+const authorHtml = formatAuthors(pub.authors, siteMetadata.name);
+
+/** Venue display line */
+const venue = pub.journal ?? pub.booktitle ?? pub.institution ?? "";
+const venueParts = [
+  venue,
+  pub.volume ? `vol. ${pub.volume}` : "",
+  pub.number ? `no. ${pub.number}` : "",
+  pub.pages ? `pp. ${pub.pages}` : "",
+].filter(Boolean);
+
+/** JSON-LD ScholarlyArticle structured data */
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  headline: pub.title,
+  author: pub.authors.map((a) => ({
+    "@type": "Person",
+    name: a.full,
+    ...(a.full === siteMetadata.name && {
+      affiliation: {
+        "@type": "Organization",
+        name: siteMetadata.affiliations[0]?.name ?? "",
+        parentOrganization: siteMetadata.affiliations[0]?.parent
+          ? { "@type": "Organization", name: siteMetadata.affiliations[0].parent }
+          : undefined,
+      },
+    }),
+  })),
+  datePublished: pub.month
+    ? `${pub.year}-${pub.month.padStart(2, "0")}`
+    : String(pub.year),
+  ...(venue && {
+    isPartOf: {
+      "@type": pub.type === "inproceedings" ? "Event" : "Periodical",
+      name: venue,
+    },
+  }),
+  ...(pub.doi && {
+    identifier: [
+      {
+        "@type": "PropertyValue",
+        propertyID: "doi",
+        value: pub.doi,
+      },
+    ],
+  }),
+  ...(pub.abstract && { abstract: pub.abstract }),
+  url: new URL(`/publications/${pub.slug}/`, siteMetadata.siteUrl).href,
+};
+---
+
+<BaseLayout
+  title={pub.title}
+  description={pub.abstract || `${pub.title} — ${pub.authors.map((a) => a.full).join(", ")}`}
+  activeNav="publications"
+  pageType="publication"
+>
+  {/* Highwire Press meta tags injected into <head> via named slot */}
+  <ScholarMeta pub={pub} slot="head" />
+
+  {/* JSON-LD ScholarlyArticle in <head> via named slot */}
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)}
+    slot="head"
+  />
+
+  <article class="wide-container py-12 md:py-16" data-pagefind-body>
+    {/* Pagefind search faceting attributes */}
+    <data hidden data-pagefind-filter={`year:${pub.year}`} />
+    <data hidden data-pagefind-meta={`type:${pub.type}`} />
+    {(pub.keywords ?? []).map((kw: string) => (
+      <data hidden data-pagefind-filter={`keywords:${kw}`} value={kw} />
+    ))}
+
+    {/* ── Back navigation ──────────────────────────────────────────────── */}
+    <a
+      href="/publications/"
+      class="mb-6 inline-flex items-center gap-1.5 font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors no-underline"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+      </svg>
+      Back to Publications
+    </a>
+
+    {/* ── Header ───────────────────────────────────────────────────────── */}
+    <header class="mb-8 border-b border-[var(--color-border)] pb-8">
+      {/* Type badge */}
+      <div class="mb-4 flex items-center gap-3">
+        <span class="inline-flex rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] px-3 py-0.5 font-mono text-[10px] uppercase tracking-widest text-[var(--color-accent)]">
+          {pubTypeLabel(pub.type)}
+        </span>
+        <span class="font-mono text-xs text-[var(--color-muted)]">{pub.year}</span>
+        {pub.status && pub.status !== "published" && (
+          <span class="inline-flex rounded-full border border-[#6366f140] bg-[#6366f110] px-3 py-0.5 font-mono text-[10px] uppercase tracking-widest text-[#6366f1]">
+            {pub.status}
+          </span>
+        )}
+      </div>
+
+      {/*
+       * LARGE TITLE — Google Scholar requirement.
+       * Title must appear in a large font at the top of the page for Scholar
+       * to correctly identify it as the paper title.
+       */}
+      <h1
+        class="vt-page-title text-2xl font-semibold leading-tight tracking-tight text-[var(--color-text)] md:text-3xl lg:text-[2rem]"
+        style={`view-transition-name: pub-${pub.slug};`}
+      >
+        {pub.title}
+      </h1>
+
+      {/*
+       * AUTHOR LIST — on a separate line below title (Scholar requirement).
+       * Site owner visually highlighted with bold + accent color.
+       */}
+      <p
+        class="mt-4 text-[15px] leading-relaxed text-[var(--color-text-secondary)]"
+        set:html={authorHtml}
+      />
+
+      {/* Venue line — styled distinctly from authors */}
+      {venue && (
+        <p class="mt-2 text-sm text-[var(--color-muted)]">
+          <em>{venueParts.join(", ")}</em>
+          {pub.year && `, ${pub.year}`}
+        </p>
+      )}
+
+      {/* Action buttons — PDF, DOI, arXiv, BibTeX, Cite */}
+      <div class="mt-5">
+        <CitationActions pub={pub} />
+      </div>
+    </header>
+
+    {/* ── Abstract ─────────────────────────────────────────────────────── */}
+    {/*
+     * ABSTRACT — must be visible on the page (Scholar requirement).
+     * Displayed prominently in its own section.
+     */}
+    {pub.abstract && (
+      <section class="mb-8">
+        <h2 class="terminal-label mb-3">&gt;_ Abstract</h2>
+        <div class="max-w-2xl rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-5 py-4">
+          <p class="text-sm leading-[1.8] text-[var(--color-text-secondary)]">
+            {pub.abstract}
+          </p>
+        </div>
+      </section>
+    )}
+
+    {/* ── Keywords ─────────────────────────────────────────────────────── */}
+    {pub.keywords && pub.keywords.length > 0 && (
+      <section class="mb-8">
+        <h2 class="terminal-label mb-3">&gt;_ Keywords</h2>
+        <div class="flex flex-wrap gap-2">
+          {pub.keywords.map((kw) => (
+            <span class="inline-flex rounded-full border border-[var(--color-border)] px-3 py-1 font-mono text-[10px] tracking-wider text-[var(--color-muted)]">
+              {kw}
+            </span>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* ── Extended content slot (for MDX companion files, future use) ──── */}
+    <div class="prose max-w-none text-[var(--color-text-secondary)]">
+      <slot />
+    </div>
+
+    {/* ── Bidirectional backlinks — computed at build time ─────────────── */}
+    {features.backlinks && backlinks.length > 0 && (
+      <Backlinks backlinks={backlinks.map((b) => ({ title: b.sourceTitle, url: b.sourceUrl, context: b.context }))} />
+    )}
+  </article>
+</BaseLayout>

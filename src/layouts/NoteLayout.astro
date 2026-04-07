@@ -1,0 +1,92 @@
+---
+/**
+ * NoteLayout.astro — Digital garden note layout.
+ *
+ * Features:
+ *   - ContentMaturity badge (seedling/budding/evergreen)
+ *   - Date and updated date display
+ *   - Tags
+ *   - Prose content with wiki-link resolution (via remark plugin)
+ *   - Bidirectional backlinks (computed at build time)
+ */
+import BaseLayout from "./BaseLayout.astro";
+import ContentMaturity from "@components/ContentMaturity.astro";
+import Backlinks from "@components/Backlinks.astro";
+import SEO from "@components/SEO.astro";
+import type { CollectionEntry } from "astro:content";
+import { formatDate } from "@utils/dates";
+import { getBacklinksForUrl } from "@utils/backlinks";
+import { features } from "@data/settings";
+
+interface Props {
+  note: CollectionEntry<"notes">;
+}
+
+const { note } = Astro.props;
+const { title, date, maturity, updatedDate, description } = note.data;
+const tags: string[] = note.data.tags;
+
+/** Compute backlinks only if the feature is enabled */
+const pageUrl = `/notes/${note.id}/`;
+const backlinks = features.backlinks ? await getBacklinksForUrl(pageUrl) : [];
+---
+
+<BaseLayout title={title} description={description} activeNav="notes">
+  {/* JSON-LD Article schema for research notes */}
+  <SEO
+    slot="head"
+    pageType="note"
+    title={title}
+    description={description}
+    url={pageUrl}
+    datePublished={date.toISOString()}
+    dateModified={updatedDate ? updatedDate.toISOString() : date.toISOString()}
+    tags={tags}
+    maturity={maturity}
+  />
+  <article class="prose-container py-12" data-pagefind-body>
+    <header class="mb-8">
+      <a
+        href="/notes/"
+        class="mb-4 inline-block font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-accent)] transition-colors"
+        data-pagefind-ignore
+      >
+        ← Back to Notes
+      </a>
+      <h1 class="text-2xl font-semibold tracking-tight text-[var(--color-text)] md:text-3xl" data-pagefind-meta="title">
+        {title}
+      </h1>
+      {/* Pagefind filter for content type */}
+      <data hidden data-pagefind-filter="type:note" />
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        {features.contentMaturityBadges && <ContentMaturity status={maturity} />}
+        <span class="font-mono text-xs text-[var(--color-muted)]">
+          <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        </span>
+        {updatedDate && (
+          <span class="font-mono text-xs text-[var(--color-muted)]">
+            · Updated <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time>
+          </span>
+        )}
+      </div>
+      {tags.length > 0 && (
+        <div class="mt-3 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span class="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 font-mono text-[10px] text-[var(--color-muted)]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <div class="prose max-w-none">
+      <slot />
+    </div>
+
+    {/* Bidirectional backlinks — controlled by features.backlinks setting */}
+    {features.backlinks && backlinks.length > 0 && (
+      <Backlinks backlinks={backlinks.map((b) => ({ title: b.sourceTitle, url: b.sourceUrl, context: b.context }))} />
+    )}
+  </article>
+</BaseLayout>

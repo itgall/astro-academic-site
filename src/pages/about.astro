@@ -1,0 +1,138 @@
+---
+/**
+ * about.astro — About page.
+ *
+ * Sections:
+ *   1. Extended biography
+ *   2. Research interests with categorized topics
+ *   3. Experience (from meta.ts)
+ *   4. Education (from meta.ts)
+ *
+ * Content migration note: The full biography text will be migrated from
+ * the old Eleventy site's about.njk in Session 7. Current text is an
+ * accurate placeholder based on extracted intelligence.
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import { siteMetadata } from "@data/meta";
+
+/**
+ * Research interest areas — grouped for visual hierarchy.
+ * These map to the knowsAbout array in meta.ts but with richer structure.
+ */
+const researchAreas = [
+  {
+    label: "Optical Imaging",
+    topics: ["Intravascular OCT", "Spectroscopic OCT", "NIR-II Photoacoustic Imaging"],
+  },
+  {
+    label: "Computational Methods",
+    topics: ["Inverse Algorithms", "Physics-Informed Neural Networks", "Computational Optical Modeling"],
+  },
+  {
+    label: "Emerging Directions",
+    topics: ["Quantum Sensing", "NV-Center Diamond Magnetometry", "Quantum Biology"],
+  },
+];
+---
+
+<PageLayout
+  title="About"
+  subtitle="Researcher and engineer — replace with your tagline."
+  activeNav="about"
+>
+  {/* ─── Biography ────────────────────────────────────────────────────── */}
+  <div class="max-w-xl">
+    <p class="text-[15px] text-[var(--color-text-secondary)] leading-[1.78] mb-5">
+      I am a [Your Title] at
+      <a href="https://your-lab.university.edu" target="_blank" rel="noopener noreferrer" class="text-[var(--color-link)] hover:text-[var(--color-link-hover)] transition-colors">Your Lab</a>,
+      Your University. My work sits at the intersection
+      of [field 1], [field 2], and [field 3] — developing the next generation
+      of [your research focus].
+    </p>
+    <p class="text-[15px] text-[var(--color-text-secondary)] leading-[1.78] mb-5">
+      I develop [brief description of your primary research methods and goals].
+      My computational work spans [describe your computational focus areas].
+    </p>
+    <p class="text-[15px] text-[var(--color-text-secondary)] leading-[1.78] mb-5">
+      I hold a [Your Degree] from [Your University], where I worked
+      on [describe your prior research]. My long-term research
+      vision centers on [describe your research vision].
+    </p>
+  </div>
+
+  {/* ─── Research Interests ───────────────────────────────────────────── */}
+  <section class="mt-12">
+    <h2 class="mb-6 font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--color-muted)] border-b border-[var(--color-border)] pb-2">
+      Research Interests
+    </h2>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {researchAreas.map((area) => (
+        <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] p-5">
+          <h3 class="mb-3 font-mono text-[11px] font-medium uppercase tracking-wider text-[var(--color-accent)]">
+            {area.label}
+          </h3>
+          <ul class="space-y-1.5">
+            {area.topics.map((topic) => (
+              <li class="text-sm text-[var(--color-text-secondary)] leading-snug">
+                {topic}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ─── Experience ───────────────────────────────────────────────────── */}
+  {siteMetadata.experience.length > 0 && (
+    <section class="mt-12">
+      <h2 class="mb-5 font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--color-muted)] border-b border-[var(--color-border)] pb-2">
+        Experience
+      </h2>
+      <div class="space-y-1">
+        {siteMetadata.experience.map((exp) => (
+          <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-4 py-3.5">
+            <div class="flex items-baseline justify-between gap-4">
+              <span class="text-sm font-medium text-[var(--color-text)]">{exp.title}</span>
+              <span class="shrink-0 font-mono text-[11px] text-[var(--color-muted)]">
+                {exp.dates}
+                {exp.current && (
+                  <span class="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)] align-middle" aria-label="Current position"></span>
+                )}
+              </span>
+            </div>
+            <span class="mt-0.5 block text-xs text-[var(--color-muted)]">{exp.org}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {/* ─── Education ────────────────────────────────────────────────────── */}
+  {siteMetadata.education.length > 0 && (
+    <section class="mt-12">
+      <h2 class="mb-5 font-mono text-[11px] font-medium uppercase tracking-widest text-[var(--color-muted)] border-b border-[var(--color-border)] pb-2">
+        Education
+      </h2>
+      <div class="space-y-1">
+        {siteMetadata.education.map((edu) => (
+          <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-4 py-3.5">
+            <div class="flex items-baseline justify-between gap-4">
+              <span class="text-sm font-medium text-[var(--color-text)]">{edu.degree}</span>
+              <span class="shrink-0 font-mono text-[11px] text-[var(--color-muted)]">{edu.dates}</span>
+            </div>
+            <span class="mt-0.5 block text-xs text-[var(--color-muted)]">{edu.school}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {/* ─── Photo ────────────────────────────────────────────────────────── */}
+  {/*
+   * Professional photo — will be added during content migration (Session 7).
+   * Replace placeholder with:
+   * <Image src={import("../assets/profile.jpg")} alt="Your Name"
+   *   width={400} height={500} class="rounded-xl" />
+   */}
+</PageLayout>

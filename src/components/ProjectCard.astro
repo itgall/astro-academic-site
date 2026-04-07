@@ -1,0 +1,57 @@
+---
+/**
+ * ProjectCard.astro — Research project card component.
+ *
+ * Displays a compact card for project listing pages with:
+ *   - Title (linked to project page)
+ *   - Institution
+ *   - Highlight tag badge
+ *   - Tech stack chips
+ *   - Description snippet from body content
+ *
+ * Follows the card pattern from Session 2 design system.
+ */
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  project: CollectionEntry<"projects">;
+}
+
+const { project } = Astro.props;
+const { title, institution, highlightTag } = project.data;
+const tags: string[] = project.data.tags;
+const techStack: string[] = project.data.techStack;
+---
+
+<article
+  class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-off)] px-5 py-4 transition-colors hover:border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+
+>
+  <a href={`/projects/${project.id}/`} class="block no-underline">
+    <div class="flex items-baseline justify-between gap-4">
+      <h3 class="text-sm font-medium text-[var(--color-text)]">{title}</h3>
+      {highlightTag && (
+        <span class="shrink-0 rounded-full bg-[var(--color-accent-bg)] border border-[var(--color-accent-border)] px-2 py-0.5 font-mono text-[10px] tracking-wider text-[var(--color-accent)]">
+          {highlightTag}
+        </span>
+      )}
+    </div>
+
+    <p class="mt-1 text-xs text-[var(--color-muted)]">{institution}</p>
+  </a>
+
+  {techStack.length > 0 && (
+    <div class="mt-2.5 flex flex-wrap gap-1.5">
+      {techStack.slice(0, 5).map((tech) => (
+        <span class="rounded-sm border border-[var(--color-border)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-muted)]">
+          {tech}
+        </span>
+      ))}
+      {techStack.length > 5 && (
+        <span class="font-mono text-[10px] text-[var(--color-muted)]">
+          +{techStack.length - 5}
+        </span>
+      )}
+    </div>
+  )}
+</article>

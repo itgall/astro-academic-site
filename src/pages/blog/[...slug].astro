@@ -1,0 +1,40 @@
+---
+/**
+ * blog/[...slug].astro — Individual blog post page.
+ *
+ * Astro 6 Content Layer API: render() is a standalone function
+ * imported from astro:content, not a method on the entry.
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import PostLayout from "@layouts/PostLayout.astro";
+import { calculateReadingTime } from "@utils/readingTime";
+
+type Post = CollectionEntry<"posts">;
+
+export async function getStaticPaths() {
+  const posts: Post[] = await getCollection("posts");
+  return posts.map((post: Post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props as { post: Post };
+const rendered = await render(post);
+const { Content, headings } = rendered;
+
+/* Auto-calculate reading time if not specified in front matter */
+if (!post.data.readingTime) {
+  /**
+   * In Astro 6 Content Layer, entry.body may not exist as a property.
+   * Use rendered markup length as a fallback estimate.
+   */
+  post.data.readingTime = calculateReadingTime(
+    (post as unknown as { body?: string }).body ?? "",
+  );
+}
+---
+
+<PostLayout post={post} headings={headings}>
+  <Content />
+</PostLayout>

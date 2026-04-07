@@ -1,0 +1,245 @@
+/**
+ * print.css — Print stylesheet for publication-quality PDF output.
+ *
+ * Goals:
+ *   1. Hide all interactive/navigation chrome (nav, footer, islands, toggles)
+ *   2. Expand external link URLs inline for reference
+ *   3. Force light color scheme regardless of user preference
+ *   4. Serif body font for print readability
+ *   5. CV page produces clean, professional PDF via browser "Print to PDF"
+ *   6. Proper page break control for publications, figures, code blocks
+ *
+ * Usage: Imported at the end of global.css. Applied via @media print.
+ */
+
+@media print {
+  /**
+   * Force light color scheme — override all dark mode custom properties.
+   * This ensures consistent, readable PDF output regardless of user's
+   * theme preference at time of printing.
+   */
+  :root,
+  [data-theme="dark"],
+  [data-theme="light"] {
+    color-scheme: light;
+    --color-bg: #ffffff;
+    --color-bg-off: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-surface-raised: #f4f5f7;
+    --color-text: #111111;
+    --color-text-secondary: #333333;
+    --color-muted: #555555;
+    --color-border: #cccccc;
+    --color-border-subtle: #e5e5e5;
+    --color-accent: #1a6b3c;
+    --color-link: #111111;
+    --color-code-bg: #f5f5f5;
+    --color-code-text: #111111;
+  }
+
+  /**
+   * Page setup — letter size with academic margins.
+   * @page margin provides consistent gutters across browsers.
+   */
+  @page {
+    margin: 2cm;
+    size: letter;
+  }
+
+  @page :first {
+    margin-top: 1.5cm;
+  }
+
+  /**
+   * Body — serif font stack for print readability.
+   * Override sans-serif default with a professional serif face.
+   */
+  body {
+    background: white !important;
+    color: #111111 !important;
+    font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /**
+   * Hide interactive/navigation elements — none of these are
+   * meaningful in a printed document.
+   */
+  nav,
+  footer,
+  .skip-to-content,
+  .theme-toggle,
+  [data-island],
+  [data-pagefind-ignore],
+  #back-to-top,
+  #mobile-nav,
+  #nav-toggle,
+  .search-widget,
+  .research-graph,
+  details.mobile-nav,
+  [data-print-hidden] {
+    display: none !important;
+  }
+
+  /**
+   * Link styling — underline all links, expand external URLs.
+   * Internal links and anchor links are excluded from URL expansion
+   * to avoid noise in the printed output.
+   */
+  a {
+    color: #111111 !important;
+    text-decoration: underline;
+    text-decoration-thickness: 0.5px;
+  }
+
+  /**
+   * Expand external URLs after links.
+   * Exceptions: internal links, anchor links, email links, and
+   * links inside nav/footer (which are hidden anyway).
+   */
+  a[href^="http"]:not([href*="your-domain.com"])::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    font-family: "IBM Plex Mono", monospace;
+    color: #666666;
+    word-break: break-all;
+  }
+
+  /* Don't expand URLs for anchor links or mailto */
+  a[href^="#"]::after,
+  a[href^="mailto"]::after,
+  a[href^="tel"]::after {
+    content: none;
+  }
+
+  /**
+   * Headings — clean, dark, no decorative borders.
+   */
+  h1, h2, h3, h4, h5, h6 {
+    color: #111111 !important;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  h2 {
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 4pt;
+  }
+
+  /**
+   * Page break control — keep related content together.
+   */
+  h1, h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep publication cards, CV entries, figures, and code blocks intact */
+  .pub-card,
+  .cv-entry,
+  .cv-section,
+  figure,
+  pre,
+  blockquote,
+  table,
+  .project-card,
+  .post-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /**
+   * Images — ensure they don't overflow the page and maintain aspect ratio.
+   */
+  img {
+    max-width: 100% !important;
+    height: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /**
+   * Code blocks — light background, visible border for print.
+   */
+  pre {
+    background: #f5f5f5 !important;
+    border: 1px solid #cccccc !important;
+    padding: 8pt 10pt;
+    font-size: 9pt;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  code {
+    font-size: 0.9em;
+  }
+
+  /**
+   * Tables — clean borders for print.
+   */
+  table {
+    border-collapse: collapse;
+  }
+
+  th, td {
+    border: 1px solid #cccccc !important;
+    padding: 4pt 6pt;
+  }
+
+  th {
+    background: #f5f5f5 !important;
+  }
+
+  /**
+   * Remove backgrounds, shadows, and decorative elements.
+   */
+  .glass,
+  .glass-surface {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /**
+   * CV-specific print optimization.
+   * The CV page uses a tighter layout for print to maximize content density.
+   */
+  .cv-layout {
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  .cv-layout h1 {
+    font-size: 18pt;
+    margin-bottom: 4pt;
+  }
+
+  .cv-layout h2 {
+    font-size: 12pt;
+    margin-top: 14pt;
+    margin-bottom: 6pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+
+  .cv-layout .cv-entry {
+    margin-bottom: 8pt;
+  }
+}

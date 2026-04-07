@@ -1,0 +1,32 @@
+---
+/**
+ * projects/index.astro — Project portfolio listing.
+ *
+ * Shows all published projects using ProjectCard components,
+ * sorted by project number (display order).
+ */
+import PageLayout from "@layouts/PageLayout.astro";
+import ProjectCard from "@components/ProjectCard.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+
+type Project = CollectionEntry<"projects">;
+
+const projects: Project[] = (await getCollection("projects", ({ data }: Project) => data.published))
+  .sort((a: Project, b: Project) => a.data.number.localeCompare(b.data.number));
+---
+
+<PageLayout
+  title="Projects"
+  subtitle={`Research projects and technical work. ${projects.length} project${projects.length === 1 ? "" : "s"}.`}
+  activeNav="projects"
+>
+  {projects.length === 0 ? (
+    <p class="text-sm text-[var(--color-muted)]">No projects published yet.</p>
+  ) : (
+    <div class="space-y-2">
+      {projects.map((project) => (
+        <ProjectCard project={project} />
+      ))}
+    </div>
+  )}
+</PageLayout>

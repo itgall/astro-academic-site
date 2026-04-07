@@ -1,0 +1,62 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Netlify Configuration
+#
+# Alternative deployment target. Netlify auto-detects this file in the repo
+# root. Build command runs both Astro and Pagefind for full search support.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[build]
+  command = "npm run build && npx pagefind --site dist"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NODE_ENV = "production"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# ── 404 fallback ──────────────────────────────────────────────────────────────
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+# ── Legacy URL redirects (preserve SEO from Eleventy site) ────────────────────
+
+[[redirects]]
+  from = "/writing/*"
+  to = "/blog/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/research/*"
+  to = "/publications/:splat"
+  status = 301
+
+# ── Security headers ─────────────────────────────────────────────────────────
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.semanticscholar.org https://pub.orcid.org"
+
+# ── Cache-Control for immutable hashed assets ─────────────────────────────────
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/pagefind/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

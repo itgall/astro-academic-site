@@ -1,0 +1,124 @@
+---
+/**
+ * PubCard.astro — Publication Card Component.
+ *
+ * Container Query responsive: adapts layout based on container width,
+ * not viewport. Compact in sidebars, full in main content.
+ *
+ * CSS :has() conditional indicators:
+ *   - PDF link present → green left accent border
+ *   - arXiv ID present → preprint badge
+ *   - DOI present → link icon
+ *   All pure CSS, zero JavaScript.
+ *
+ */
+import type { Publication } from "@utils/bibtex";
+import { formatAuthors, pubTypeLabel } from "@utils/bibtex";
+import { siteMetadata } from "@data/meta";
+
+interface Props {
+  pub: Publication;
+  /** Show abstract excerpt (default: false) */
+  showAbstract?: boolean;
+}
+
+const { pub, showAbstract = false } = Astro.props;
+
+/**
+ * Format author list with site owner highlighted.
+ * Uses set:html to render the <strong> tag from formatAuthors.
+ */
+const authorHtml = formatAuthors(pub.authors, siteMetadata.name);
+
+/** Venue display: journal or conference name */
+const venue = pub.journal ?? pub.booktitle ?? "";
+
+/** Build venue detail string: "Nature Photonics, 19(10), 734–742" */
+const venueDetail = [
+  venue,
+  pub.volume ? `${pub.volume}${pub.number ? `(${pub.number})` : ""}` : "",
+  pub.pages ?? "",
+].filter(Boolean).join(", ");
+
+/** Unique view-transition-name for morphing animation to detail page */
+const vtName = `pub-${pub.slug}`;
+---
+
+{/*
+ * Container wrapper for @container queries.
+ * The pub-card-container class sets container-type: inline-size.
+ */}
+<div class="pub-card-container">
+  <article
+    class="pub-card"
+    data-pagefind-filter={`year:${pub.year}`}
+    data-pagefind-meta={`type:${pub.type}`}
+    style={`view-transition-name: ${vtName};`}
+  >
+    {/* Hidden data attributes for CSS :has() selectors */}
+    {pub.pdfPath && <data class="has-pdf" hidden value={pub.pdfPath} />}
+    {pub.arxivId && <data class="has-arxiv" hidden value={pub.arxivId} />}
+    {pub.doi && <data class="has-doi" hidden value={pub.doi} />}
+
+    {/* Pagefind filter attributes for keywords */}
+    {pub.keywords?.map((kw) => (
+      <data hidden data-pagefind-filter={`keywords:${kw}`} value={kw} />
+    ))}
+
+    <div class="pub-card-body">
+      {/* Type badge + year */}
+      <div class="pub-card-meta">
+        <span class="pub-type-badge" data-type={pub.type}>
+          {pubTypeLabel(pub.type)}
+        </span>
+        <span class="pub-year">{pub.year}</span>
+        {pub.status === "preprint" && (
+          <span class="pub-preprint-badge">Preprint</span>
+        )}
+      </div>
+
+      {/* Title — linked to detail page */}
+      <h3 class="pub-card-title">
+        <a href={`/publications/${pub.slug}/`}>
+          {pub.title}
+        </a>
+      </h3>
+
+      {/* Authors — site owner highlighted */}
+      <p class="pub-card-authors" set:html={authorHtml} />
+
+      {/* Venue */}
+      {venueDetail && (
+        <p class="pub-card-venue">
+          <em>{venueDetail}</em>
+          {pub.status === "under-review" && <span class="pub-status-badge">Under Review</span>}
+        </p>
+      )}
+
+      {/* Abstract excerpt (optional) */}
+      {showAbstract && pub.abstract && (
+        <p class="pub-card-abstract">
+          {pub.abstract.length > 200
+            ? `${pub.abstract.slice(0, 200)}…`
+            : pub.abstract}
+        </p>
+      )}
+
+      {/* Quick action links — inline, minimal */}
+      <div class="pub-card-links">
+        {pub.pdfPath && (
+          <a href={pub.pdfPath} class="pub-link" data-link="pdf">PDF</a>
+        )}
+        {pub.doi && (
+          <a href={`https://doi.org/${pub.doi}`} class="pub-link" data-link="doi" target="_blank" rel="noopener noreferrer">DOI</a>
+        )}
+        {pub.arxivId && (
+          <a href={`https://arxiv.org/abs/${pub.arxivId}`} class="pub-link" data-link="arxiv" target="_blank" rel="noopener noreferrer">arXiv</a>
+        )}
+        {pub.codeUrl && (
+          <a href={pub.codeUrl} class="pub-link" data-link="code" target="_blank" rel="noopener noreferrer">Code</a>
+        )}
+      </div>
+    </div>
+  </article>
+</div>

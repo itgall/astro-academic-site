@@ -1,0 +1,89 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Structured CV Data — Single source of truth for the /cv/ page.
+#
+# Parsed at build time by src/pages/cv.astro using js-yaml.
+# Publications are NOT listed here — they come from bibliography.bib.
+#
+# ⚠️  Replace ALL placeholder values with your own before deploying.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "Your Name"
+title: "Your Title"
+affiliation: "Your Lab, Your University"
+email: "you@university.edu"
+website: "https://your-domain.com"
+orcid: "0000-0000-0000-0000"
+
+# ── Research Interests ────────────────────────────────────────────────────────
+research_interests:
+  - Your Research Area 1
+  - Your Research Area 2
+  - Your Research Area 3
+
+# ── Education ─────────────────────────────────────────────────────────────────
+education:
+  - degree: "Ph.D. Your Field"
+    institution: "Your University"
+    location: "City, State"
+    dates: "20XX–20XX"
+    gpa: "4.00"
+    honors:
+      - "Summa Cum Laude"
+
+  - degree: "B.S. Your Field"
+    institution: "Your University"
+    location: "City, State"
+    dates: "20XX–20XX"
+    gpa: "3.90"
+    honors: []
+
+# ── Experience ────────────────────────────────────────────────────────────────
+experience:
+  - title: "Your Current Title"
+    organization: "Your Lab or Center"
+    parent: "Your Department / Your University"
+    location: "City, State"
+    dates: "20XX–Present"
+    current: true
+    highlights:
+      - "Describe your first major responsibility or achievement"
+      - "Describe another key contribution"
+
+# ── Skills ────────────────────────────────────────────────────────────────────
+skills:
+  - category: "Computational"
+    items:
+      - "Python"
+      - "MATLAB"
+      - "TypeScript"
+  - category: "Experimental"
+    items:
+      - "Your technique 1"
+      - "Your technique 2"
+  - category: "Engineering"
+    items:
+      - "Your tool 1"
+      - "Your tool 2"
+
+# ── Research Experience ──────────────────────────────────────────────────────
+research:
+  - title: "Example Research Project Title"
+    institution: "Your University"
+    dates: "20XX–20XX"
+    description: "Brief description of the project and your contributions."
+
+# ── Teaching ──────────────────────────────────────────────────────────────────
+teaching:
+  - role: "Teaching Assistant"
+    course: "COURSE 101 — Introduction to Your Field"
+    institution: "Your University"
+    dates: "Fall 20XX"
+
+# ── Awards & Fellowships ─────────────────────────────────────────────────────
+awards: []
+
+# ── Professional Service ─────────────────────────────────────────────────────
+service: []
+
+# ── Selected Talks ───────────────────────────────────────────────────────────
+talks: []

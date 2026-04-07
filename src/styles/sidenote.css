@@ -1,0 +1,178 @@
+/**
+ * sidenote.css — Tufte-style sidenote layout.
+ *
+ * Uses the classic Tufte CSS float approach: sidenote <span> is placed
+ * inline in the text, then floated to the right margin via negative margins.
+ * On narrow screens, a Popover API <div> provides tap-to-reveal behavior.
+ *
+ * Counter auto-generates sequential sidenote numbers via CSS, matching
+ * the original Markdown footnote numbering.
+ */
+
+/* ── Counter initialization ──────────────────────────────────────────────── */
+
+.prose {
+  counter-reset: sidenote-counter;
+}
+
+/* ── Toggle label — clickable/focusable superscript number ───────────────── */
+
+.sidenote-toggle {
+  cursor: pointer;
+  counter-increment: sidenote-counter;
+}
+
+.sidenote-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* CSS-generated superscript number */
+.sidenote-number::after {
+  content: counter(sidenote-counter);
+  font-size: 0.65em;
+  vertical-align: super;
+  line-height: 0;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* ── Margin sidenote — Tufte float approach ──────────────────────────────── */
+
+.sidenote {
+  /* Default: hidden on narrow screens */
+  display: none;
+}
+
+@media (min-width: 80rem) {
+  .sidenote {
+    display: block;
+    float: right;
+    clear: right;
+    margin-right: -45%;
+    width: 40%;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--color-border-subtle);
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Sidenote number prefix in margin */
+  .sidenote::before {
+    content: counter(sidenote-counter) ". ";
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  /* On wide screens, hide the popover version */
+  .sidenote-popover {
+    display: none !important;
+  }
+
+  /* On wide screens, don't show pointer cursor (no popover to open) */
+  .sidenote-toggle {
+    cursor: default;
+  }
+}
+
+/* ── Popover sidenote — narrow screens via Popover API ───────────────────── */
+
+.sidenote-popover {
+  /* Base hidden state — Popover API manages visibility */
+  display: none;
+}
+
+.sidenote-popover:popover-open {
+  display: block;
+  max-width: min(90vw, 28rem);
+  padding: 1rem 1.25rem;
+  margin: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+
+  /* Center in viewport */
+  position: fixed;
+  inset: unset;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Popover header label */
+.sidenote-popover:popover-open::before {
+  content: "Note " counter(sidenote-counter);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.sidenote-popover p {
+  margin: 0 0 0.5rem;
+}
+
+.sidenote-popover p:last-child {
+  margin-bottom: 0;
+}
+
+.sidenote-popover::backdrop {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ── Fallback — traditional footnotes when Popover API unavailable ────────── */
+
+.sidenote-fallback {
+  display: none;
+}
+
+@supports not selector(:popover-open) {
+  @media (max-width: 79.999rem) {
+    .sidenote-fallback {
+      display: block;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--color-border);
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    .sidenote-fallback ol {
+      padding-left: 1.5rem;
+      list-style-type: decimal;
+    }
+
+    .sidenote-fallback li {
+      margin-bottom: 0.75rem;
+    }
+
+    .sidenote-toggle {
+      pointer-events: none;
+    }
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .sidenote-popover:popover-open {
+    animation: none;
+  }
+}
